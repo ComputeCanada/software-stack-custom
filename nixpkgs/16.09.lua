@@ -29,7 +29,6 @@ setenv("LOCALE_ARCHIVE", pathJoin(root, "lib/locale/locale-archive"))
 -- silence harmless MXM warnings from libmxm
 setenv("MXM_LOG_LEVEL", "error")
 -- workaround for id issue
-prepend_path("LD_LIBRARY_PATH", "/usr/lib64/nvidia")
 prepend_path("LD_LIBRARY_PATH", "/cvmfs/soft.computecanada.ca/nix/lib")
 
 -- also make easybuild and easybuild-generated modules accessible
