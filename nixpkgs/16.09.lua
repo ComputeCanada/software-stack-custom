@@ -47,7 +47,9 @@ if not os.getenv("RSNT_INTERCONNECT") and mode() == "load" then
 		setenv("RSNT_INTERCONNECT", "infiniband")
 	end
 end
-
+if os.getenv("SLURM_TMPDIR") and (not os.getenv("TMPDIR") or os.getenv("TMPDIR") == "/tmp") then
+	setenv("TMPDIR", os.getenv("SLURM_TMPDIR"))
+end
 
 -- also make easybuild and easybuild-generated modules accessible
 prepend_path("PATH", "/cvmfs/soft.computecanada.ca/easybuild/bin")
@@ -61,3 +63,68 @@ prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2017/
 if os.getenv("USER") ~= "ebuser" then
     prepend_path("MODULEPATH", pathJoin(os.getenv("HOME"), ".local/easybuild/modules/2017/Core"))
 end
+
+-- define PROJECT and SCRATCH environments
+local posix = require("posix")
+local stat = posix.stat
+
+local user = os.getenv("USER")
+local def_scratch_dir = pathJoin("/scratch",user)
+local def_project_link = pathJoin("/home",user,"project")
+local project_dir = nil
+
+-- if we are in a job, define the project directory based on the SLURM project if it exists
+local jobid = os.getenv("SLURM_JOBID")
+local account = os.getenv("SLURM_JOB_ACCOUNT")
+if jobid then
+	local account = os.getenv("SLURM_JOB_ACCOUNT")
+	if account then
+		-- remove the _cpu or _gpu suffixes
+		account = account:gsub("^(.*)_cpu$","%1")
+		account = account:gsub("^(.*)_gpu$","%1")
+	
+		local test_project_link = pathJoin("/home",user,"projects",account)
+		-- test if there is such a project link
+		if stat(test_project_link,"type") == "link" then
+			-- find the directory this link points to
+			project_dir = subprocess("readlink " .. test_project_link)
+		end
+	end
+end
+-- if project_dir was not found based on SLURM_JOB_ACCOUNT, test the default project 
+if not project_dir and stat(def_project_link,"type") == "link" then
+	-- find the directory this link points to
+	project_dir = subprocess("readlink " .. def_project_link)
+end
+if project_dir then
+	-- if PROJECT is not defined, or if it was defined by us previously (i.e. in the login environment), define it
+	if not os.getenv("PROJECT") or os.getenv("PROJECT") == os.getenv("CC_PROJECT") then
+		setenv("PROJECT", project_dir)
+	end
+	-- define CC_PROJECT nevertheless
+	setenv("CC_PROJECT", project_dir)
+end
+-- do not overwrite the environment variable if it already exists
+if not os.getenv("SCRATCH") then
+	if stat(def_scratch_dir,"type") == "directory" then
+		setenv("SCRATCH", def_scratch_dir)
+	end
+end
+
+-- if SLURM_TMPDIR is set, define TMPDIR to use it unless TMPDIR was already set to something different than /tmp
+if os.getenv("SLURM_TMPDIR") and (not os.getenv("TMPDIR") or os.getenv("TMPDIR") == "/tmp") then
+	setenv("TMPDIR", os.getenv("SLURM_TMPDIR"))
+	setenv("LOCAL_SCRATCH", os.getenv("SLURM_TMPDIR"))
+end
+
+
+-- if SQUEUE_FORMAT is not already defined, define it
+if not os.getenv("SQUEUE_FORMAT") then
+	setenv("SQUEUE_FORMAT","%.8i %.8u %.12a %.14j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r) ")
+end
+
+-- if SQUEUE_SORT is not already defined, define it
+if not os.getenv("SQUEUE_SORT") then
+	setenv("SQUEUE_SORT", "-t,e,S")
+end
+
