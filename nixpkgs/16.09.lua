@@ -60,17 +60,19 @@ setenv("EBROOTNIXPKGS", root)
 setenv("EBVERSIONNIXPKGS", "16.09")
 
 prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2017/Core")
-if os.getenv("USER") ~= "ebuser" then
-    prepend_path("MODULEPATH", pathJoin(os.getenv("HOME"), ".local/easybuild/modules/2017/Core"))
+
+local user = getenv_logged("USER","unknown")
+local home = getenv_logged("HOME",pathJoin("/home",user))
+if user ~= "ebuser" then
+    prepend_path("MODULEPATH", pathJoin(home, ".local/easybuild/modules/2017/Core"))
 end
 
 -- define PROJECT and SCRATCH environments
 local posix = require("posix")
 local stat = posix.stat
 
-local user = os.getenv("USER")
 local def_scratch_dir = pathJoin("/scratch",user)
-local def_project_link = pathJoin("/home",user,"project")
+local def_project_link = pathJoin(home,"project")
 local project_dir = nil
 
 -- if we are in a job, define the project directory based on the SLURM project if it exists
@@ -83,7 +85,7 @@ if jobid then
 		account = account:gsub("^(.*)_cpu$","%1")
 		account = account:gsub("^(.*)_gpu$","%1")
 	
-		local test_project_link = pathJoin("/home",user,"projects",account)
+		local test_project_link = pathJoin(home,"projects",account)
 		-- test if there is such a project link
 		if stat(test_project_link,"type") == "link" then
 			-- find the directory this link points to
