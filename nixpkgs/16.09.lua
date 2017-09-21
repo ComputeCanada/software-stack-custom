@@ -76,9 +76,9 @@ local def_project_link = pathJoin(home,"project")
 local project_dir = nil
 
 -- if we are in a job, define the project directory based on the SLURM project if it exists
-local jobid = os.getenv("SLURM_JOBID")
 local account = os.getenv("SLURM_JOB_ACCOUNT")
-if jobid then
+local jobid = os.getenv("SLURM_JOBID")
+if false and jobid then
 	local account = os.getenv("SLURM_JOB_ACCOUNT")
 	if account then
 		-- remove the _cpu or _gpu suffixes
@@ -94,6 +94,7 @@ if jobid then
 	end
 end
 -- if project_dir was not found based on SLURM_JOB_ACCOUNT, test the default project 
+project_dir = def_project_link
 if not project_dir and stat(def_project_link,"type") == "link" then
 	-- find the directory this link points to
 	project_dir = subprocess("readlink " .. def_project_link)
@@ -108,9 +109,9 @@ if project_dir then
 end
 -- do not overwrite the environment variable if it already exists
 if not os.getenv("SCRATCH") then
-	if stat(def_scratch_dir,"type") == "directory" then
+--	if stat(def_scratch_dir,"type") == "directory" then
 		setenv("SCRATCH", def_scratch_dir)
-	end
+--	end
 end
 
 -- if SLURM_TMPDIR is set, define TMPDIR to use it unless TMPDIR was already set to something different than /tmp
@@ -129,4 +130,5 @@ end
 if not os.getenv("SQUEUE_SORT") then
 	setenv("SQUEUE_SORT", "-t,e,S")
 end
+set_alias("quota", "diskusage_report")
 
