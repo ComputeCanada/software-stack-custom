@@ -1,0 +1,105 @@
+#!/bin/bash
+
+VERBOSITY=3
+if [[ $# -ge 1 ]]; then
+	VERBOSITY=$1
+fi
+
+function get_projects {
+	projects_links=$(find $HOME/projects -maxdepth 1 -type l)
+	groups=$(groups 2>/dev/null)
+	groups=${groups// /|}
+	projects=""
+	for p in $projects_links; do
+		project=$(basename $p)
+		# exclude any link which is not also a group
+		if [[ "$project" =~ ^($groups)$ ]]; then
+			projects="$project $projects"
+		fi
+	done
+	echo $projects
+}
+
+function get_lustre_group_info {
+	# returns 4 values. space usage, space quota, file usage, file quota
+	group=$1
+	filesystem=$2
+	lfs quota -q -g $1 $2 | awk '{print $2,$3,$6,$7}' | sed -e 's/\*//g'
+}
+function get_lustre_user_info {
+	# returns 4 values. space usage, space quota, file usage, file quota
+	user=$1
+	filesystem=$2
+	lfs quota -q -u $1 $2 | awk '{print $2,$3,$6,$7}' | sed -e 's/\*//g'
+}
+function scale {
+	num=$1
+	if [[ $num -ge $((10*1000*1000*1000*1000)) ]]; then 
+		echo "$((num / (1000*1000*1000*1000)))T" 
+	elif [[ $num -ge $((10*1000*1000*1000)) ]]; then 
+		echo "$((num / (1000*1000*1000)))G" 
+	elif [[ $num -ge $((10*1000*1000)) ]]; then
+		echo "$((num / (1000*1000)))M" 
+	elif [[ $num -ge $((10*1000)) ]]; then
+		echo "$((num / (1000)))k" 
+	else
+		echo "$num"
+	fi
+}
+function scale_bytes {
+	num_bytes=$(($1*1024))
+	if [[ $num_bytes -ge $((10*1024*1024*1024*1024)) ]]; then 
+		echo "$((num_bytes / (1024*1024*1024*1024))) TB" 
+	elif [[ $num_bytes -ge $((10*1024*1024*1024)) ]]; then 
+		echo "$((num_bytes / (1024*1024*1024))) GB" 
+	elif [[ $num_bytes -ge $((10*1024*1024)) ]]; then
+		echo "$((num_bytes / (1024*1024))) MB" 
+	elif [[ $num_bytes -ge $((10*1024)) ]]; then
+		echo "$((num_bytes / (1024))) kB" 
+	else
+		echo "$num_bytes B"
+	fi
+}
+function report_home_usage {
+	who=$1
+	data=($(get_lustre_user_info $who /home))
+	usage_bytes=$(scale $((1000 * ${data[0]})))
+	quota_bytes=$(scale $((1000 * ${data[1]})))
+	usage_files=$(scale ${data[2]})
+	quota_files=$(scale ${data[3]})
+
+	printf "%40s %20s %20s\n" "Home (user $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+}
+function report_scratch_usage {
+	who=$1
+	data=($(get_lustre_user_info $who /scratch))
+	usage_bytes=$(scale $((1000 * ${data[0]})))
+	quota_bytes=$(scale $((1000 * ${data[1]})))
+	usage_files=$(scale ${data[2]})
+	quota_files=$(scale ${data[3]})
+
+	printf "%40s %20s %20s\n" "Scratch (user $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+}
+function report_project_usage {
+	who=$1
+	data=($(get_lustre_group_info $who /project))
+	usage_bytes=$(scale $((1000 * ${data[0]})))
+	quota_bytes=$(scale $((1000 * ${data[1]})))
+	usage_files=$(scale ${data[2]})
+	quota_files=$(scale ${data[3]})
+
+	printf "%40s %20s %20s\n" "Project (group $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+}
+
+printf "%40s %20s %20s\n" "Description" "Space" "# of files"
+if [[ "$CC_CLUSTER" == "cedar" ]]; then
+	report_home_usage $USER
+fi
+if [[ -d "/scratch" ]]; then
+	report_scratch_usage $USER
+fi
+if [[ -d "/project" ]]; then
+	for p in $USER $(get_projects $USER); do
+		report_project_usage $p
+	done
+fi

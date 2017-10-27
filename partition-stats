@@ -1,0 +1,261 @@
+#!/usr/bin/env ruby
+#----------------------------------------------------------------------------------------#
+### Name: ilde_nodes                                                                     #
+### Version: 1.0                                                                         #
+### Date: August 09 2017                                                                 #
+### Author: Adam Spencer                                                                 #
+###                                                                                      #
+###--------------------------------------------------------------------------------------#
+### Description:                                                                         #
+###                                                                                      #
+###   Shows how many running and queued jobs exist on the cluster by partition and node  #
+###   type has verbose and table options                                                 #
+###--------------------------------------------------------------------------------------#
+###                                                                                      #
+###--------------------------------------------------------------------------------------#
+### Change log :                                                                         #
+###    Kamil August 09 2017: Added table format and commandline options.                 #
+###    Kamil August 21 2017: Added idle and total node per partition information         #
+###                                                                                      #
+###                                                                                      #
+###                                                                                      #
+###                                                                                      #
+###                                                                                      #
+####-------------------------------------------------------------------------------------#
+
+require 'pp'
+require 'optparse'
+# parse the commandline ang give the appopreat output
+
+options = {}
+optparse = OptionParser.new do|opts|
+   opts.banner = "Usage: partition-stats [options]"
+   opts.on( '-v', '--verbose', 'Output a lot of job information' ) do
+      options[:verbose] = true
+   end
+   opts.on( '-t', '--table', 'Output job information in table format' ) do
+      options[:table] = true
+   end
+   opts.on( '-q', '--queued', 'Output queued job information in table format' ) do
+      options[:queued] = true
+   end
+   opts.on( '-r', '--running', 'Output running job information in table format' ) do
+      options[:running] = true
+   end
+   opts.on( '-T','--total', 'Output total nodes available in partition') do
+      options[:total] = true
+   end
+   opts.on( '-i','--idle', 'Output idle nodes available in partition') do
+      options[:idle] = true
+   end
+   opts.on( '-a','--all', 'Output all info in table format') do
+	options[:all] = true   
+   end
+   opts.on( '-l','--long', 'Output all info in long table format') do
+      options[:long] = true
+   end
+   opts.on( '-c','--compact', 'Output all info in compacted table format') do
+      options[:compact] = true
+   end
+   opts.on( '-h', '--help', 'Display this screen' ) do
+      puts opts
+      exit 
+   end
+end
+begin optparse.parse!
+   rescue OptionParser::InvalidOption => e
+   puts e 
+   puts optparse
+   exit 1
+end
+
+def execute_w_catch(command, retry_count=3, fail_bool = true)
+   cmd_result = ''	    
+   retry_count.times do	        
+      cmd_result = %x{ #{command} }			    
+      break if $?.success? == true
+         sleep 3
+   end
+   fail if fail_bool == true && $?.success? == false
+   cmd_result
+end
+
+
+# I eddited the Idle nodes  
+partitions = execute_w_catch(%q{ sinfo -ho '%R' }).split.delete_if { |x| x == 'backfill' }.sort
+nodes = execute_w_catch(%Q{ sinfo -hN  -o '%R#%N#%t' -p #{partitions.join(',')} }).split("\n").map {|x| x.split('#') }
+idles=nodes.select{|e| e[2]=="idle" }.map{|e| [e[0],e[1]]}
+#idles = %x{ sinfo -hN -t IDLE -o '%R#%N' -p #{partitions.join(',')} }.split("\n").map {|x| x.split('#') }
+idles_hash = idles.each_with_object(Hash.new { |h,k| h[k] = []}) do |(k,v),hash|
+  hash[k] << v
+end
+nodes_hash= nodes.each_with_object(Hash.new { |h,k| h[k] = []}) do |(k,v),hash|
+  hash[k] << v
+end
+
+pen_run = execute_w_catch(%Q{ squeue -ht PD,RUNNING -o "%P#%R#%T" -p #{partitions.join(',')} }).split("\n").map {|x| x.split('#') }
+actives,pendings = pen_run.partition { |x| x.last == 'RUNNING'; }
+pendings.keep_if {|x| /\(Resources\)$|\(Priority\)$/ =~ x[1] }
+pendings.map! { |x| [ x.first.partition(',').first, x[1,x.length] ] }
+pendings_hash = pendings.each_with_object(Hash.new { |h,k| h[k] = []}) do |(k,v),hash|
+  hash[k] << v
+end
+actives_hash = actives.each_with_object(Hash.new { |h,k| h[k] = []}) do |(k,v),hash|
+  hash[k] << v
+end
+my_verbose_ouput=""
+partitions.each do |part|
+  my_verbose_ouput+=sprintf("%20s: %14s: %4s, %14s: %4s, %14s: %4s\n", part, "active jobs", actives_hash[part].length, "queued jobs", pendings_hash[part].length, "idle nodes", idles_hash[part].length)
+end
+my_verbose_ouput += sprintf("%20s: %14s: %4s, %14s: %4s, %14s: %4s\n", "Totals", "active jobs", actives_hash.values.flatten.length, "queued jobs", pendings_hash.values.flatten(1).length, "idle nodes", idles_hash.values.flatten.uniq.length)
+
+
+###
+###  Start of Kamil's section generating the table data
+
+# ntb = number of diffrent classiifcations of walltime
+ntb=6
+
+# The appopreat variable for the apporpreat cluster
+case
+when ENV["CC_CLUSTER"] == "cedar" then
+	     name_part  = ["cpubase_bycore_b","cpularge_bycore_b","gpubase_bygpu_b" ]
+	     name_node  = ["cpubase_bynode_b","cpularge_bynode_b","gpubase_bynode_b","gpularge_bynode_b"]
+             name_label = ["Regular   "      ,"Large Mem "       ,"GPU       "      ,"GPU Large "       ]
+when ENV["CC_CLUSTER"] == "graham" then
+	     name_part  = ["cpubase_bycore_b","cpularge_bycore_b","gpubase_bygpu_b" ]
+	     name_node  = ["cpubase_bynode_b","cpularge_bynode_b","gpubase_bynode_b"]
+             name_label = ["Regular   "      ,"Large Mem "       ,"GPU       "      ]
+else # For testing purposes
+	   puts "This cluster is not currently supported by this script"
+	   exit
+end
+
+# Some temporary working variable to hold patitions names, and output in table format
+table_part=Array.new(name_part.size) { Array.new(ntb,0) }
+table_node=Array.new(name_node.size) { Array.new(ntb,0) }
+
+
+# Create partition names for (by-core or by-gpu) partitions
+name_part.each_index{|i|
+   table_part[i].each_index{|ii|
+      table_part[i][ii]=name_part[i] + (ii+1).to_s
+   }
+}
+# Create partition names for (by-node) partitions
+name_node.each_index{|i|
+   table_node[i].each_index{|ii|
+      table_node[i][ii]=name_node[i] + (ii+1).to_s
+   }
+}
+
+# Create the queued jobs table 
+tableq_output=Array.new([name_part.size, name_node.size].max).each_with_index.map{|e,i|
+   name_label[i] + "| "+ Array.new(ntb,["-","-"]).each_with_index.map{|ee,ii|
+	ee[0]=pendings_hash[table_node[i][ii].to_s].length.to_s if (table_node.size > i) && table_node[i][ii]
+        ee[1]=pendings_hash[table_part[i][ii].to_s].length.to_s if (table_part.size > i) && table_node[i][ii]
+	ee[0].rjust(4) + ":" + ee[1].ljust(4)
+   }.join("|") + "|"
+}.join("\n") + "\n"
+
+# Create the running jobs table
+tabler_output=Array.new([name_part.size, name_node.size].max).each_with_index.map{|e,i|
+   name_label[i] + "| "+ Array.new(ntb,["-","-"]).each_with_index.map{|ee,ii|
+      ee[0]=actives_hash[table_node[i][ii].to_s].length.to_s if (table_node.size > i) && table_node[i][ii]
+      ee[1]=actives_hash[table_part[i][ii].to_s].length.to_s if (table_part.size > i) && table_node[i][ii]
+      ee[0].rjust(4) + ":" + ee[1].ljust(4)
+   }.join("|") + "|"
+}.join("\n") + "\n"
+
+# create idle nodes table
+tablei_output=Array.new([name_part.size, name_node.size].max).each_with_index.map{|e,i|	   
+   name_label[i] + "| "+ Array.new(ntb,["-","-"]).each_with_index.map{|ee,ii|
+      ee[0]=idles_hash[table_node[i][ii].to_s].length.to_s if (table_node.size > i) && table_node[i][ii] && idles_hash[table_node[i][ii]] && idles_hash[table_node[i][ii]].respond_to?(:length)
+      ee[1]=idles_hash[table_part[i][ii].to_s].length.to_s if (table_part.size > i) && table_node[i][ii] && idles_hash[table_part[i][ii]] && idles_hash[table_part[i][ii]].respond_to?(:length)
+      ee[0].rjust(4) + ":" + ee[1].ljust(4)
+   }.join("|") + "|"
+}.join("\n") + "\n"
+
+# create total nodes table
+tablet_output=Array.new([name_part.size, name_node.size].max).each_with_index.map{|e,i|
+   name_label[i] + "| "+ Array.new(ntb,["-","-"]).each_with_index.map{|ee,ii|
+      ee[0]=nodes_hash[table_node[i][ii].to_s].length.to_s if (table_node.size > i) && table_node[i][ii] && nodes_hash[table_node[i][ii]] && nodes_hash[table_node[i][ii]].respond_to?(:length)
+      ee[1]=nodes_hash[table_part[i][ii].to_s].length.to_s if (table_part.size > i) && table_node[i][ii] && nodes_hash[table_part[i][ii]] && nodes_hash[table_part[i][ii]].respond_to?(:length)
+      ee[0].rjust(4) + ":" + ee[1].ljust(4)
+   }.join("|") + "|"
+}.join("\n") + "\n" 
+
+#### End of Kamils section generating the table data
+case 
+when options.empty?
+   options[:compact]=true 
+   options[:all]=true   
+when options[:all] & options[:long]
+   options[:queued] =true
+   options[:running]=true
+   options[:idle]=true
+   options[:total]=true
+#when !options[:long]
+#   options[:compact]=true
+end
+
+table_split   ="----------|-------------------------------------------------------------\n"
+table_header  ="Node type |                     Max walltime                            \n"
+table_header +="          |   3 hr   |  12 hr  |  24 hr  |  72 hr  |  168 hr |  672 hr |\n"
+q_head        ="       Number of Queued Jobs by partition Type (by node:by core)        \n"
+r_head        ="      Number of Running Jobs by partition Type (by node:by core)        \n"
+i_head        ="        Number of Idle nodes by partition Type (by node:by core)        \n"
+t_head        ="       Total Number of nodes by partition Type (by node:by core)        \n"
+
+
+cpt=options[:compact]
+# Print the appopreate output as was selected.
+catch :redo do
+  case
+    when options[:verbose]  
+       puts my_verbose_ouput 
+    when options[:all] && options[:compact]
+       puts "\n" + table_header 
+       puts table_split + q_head + table_split + tableq_output   
+       puts table_split + r_head + table_split + tabler_output 
+       puts table_split + i_head + table_split + tablei_output 
+       puts table_split + t_head + table_split + tablet_output
+       puts table_split + "\n\n"
+    when !options[:all] && options[:compact]
+        puts "\n" + table_header
+        options.delete(:compact)
+	redo
+    when options[:queued]
+      if cpt then 
+         puts table_split + q_head  + table_split + tableq_output
+      else
+        puts "\n" + q_head  + "\n"  + table_header + table_split + tableq_output + table_split + "\n\n"
+      end
+      options.delete(:queued)
+      redo
+    when options[:running]
+      if cpt then
+	 puts table_split + r_head  + table_split + tabler_output
+      else			             
+	  puts "\n" + r_head  + "\n"  + table_header + table_split + tabler_output + table_split + "\n\n"					           
+      end
+      options.delete(:running)
+      redo
+    when options[:idle]
+      if cpt then 
+	  puts table_split + i_head  + table_split + tabler_output
+      else
+          puts "\n" + i_head  + "\n"  + table_header + table_split + tablei_output + table_split + "\n\n"
+      end
+      options.delete(:idle)
+      redo
+    when options[:total]
+       if cpt then
+	  puts table_split + t_head  + table_split + tablet_output 
+       else
+          puts "\n" + t_head  + "\n"  + table_header + table_split + tablet_output + table_split + "\n\n"
+       end
+       options.delete(:total)
+       redo
+    end
+end
