@@ -131,5 +131,10 @@ end
 if not os.getenv("SQUEUE_SORT") then
 	setenv("SQUEUE_SORT", "-t,e,S")
 end
+
+-- if SACCT_FORMAT is not already defined, define it
+if not os.getenv("SACCT_FORMAT") then
+	setenv("SACCT_FORMAT","Account,User,JobID,Start,End,AllocCPUS,Elapsed,AllocTRES%30,CPUTime,AveRSS,MaxRSS,MaxRSSTask,MaxRSSNode,NodeList")
+end
 set_alias("quota", "diskusage_report")
 
