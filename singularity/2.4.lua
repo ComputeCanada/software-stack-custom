@@ -11,7 +11,7 @@ version differences between the source and target systems.
 - Website: http://singularity.lbl.gov/ 
 - CC-Wiki: Singularity ]])
 
-local root = "/opt/software/singularity"
+local root = "/opt/software/singularity-2.4.1"
 
 prepend_path("PATH", pathJoin(root, "bin"))
 
