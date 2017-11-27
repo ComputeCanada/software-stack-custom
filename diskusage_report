@@ -32,6 +32,10 @@ function get_lustre_user_info {
 	filesystem=$2
 	lfs quota -q -u $1 $2 | awk '{print $2,$3,$6,$7}' | sed -e 's/\*//g'
 }
+function get_oceanstor_user_info {
+        user=$1
+	$(dirname $0)/oceanstor-quota $user
+}
 function scale {
 	num=$1
 	if [[ $num -ge $((10*1000*1000*1000*1000)) ]]; then 
@@ -60,11 +64,21 @@ function scale_bytes {
 		echo "$num_bytes B"
 	fi
 }
-function report_home_usage {
+function report_home_usage_lustre {
 	who=$1
 	data=($(get_lustre_user_info $who /home))
 	usage_bytes=$(scale $((1000 * ${data[0]})))
 	quota_bytes=$(scale $((1000 * ${data[1]})))
+	usage_files=$(scale ${data[2]})
+	quota_files=$(scale ${data[3]})
+
+	printf "%40s %20s %20s\n" "Home (user $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+}
+function report_home_usage_oceanstor {
+	who=$1
+	data=($(get_oceanstor_user_info $who))
+	usage_bytes=$(scale ${data[0]})
+	quota_bytes=$(scale ${data[1]})
 	usage_files=$(scale ${data[2]})
 	quota_files=$(scale ${data[3]})
 
@@ -93,7 +107,9 @@ function report_project_usage {
 
 printf "%40s %20s %20s\n" "Description" "Space" "# of files"
 if [[ "$CC_CLUSTER" == "cedar" ]]; then
-	report_home_usage $USER
+	report_home_usage_lustre $USER
+elif [[ "$CC_CLUSTER" == "graham" ]]; then
+	report_home_usage_oceanstor $USER
 fi
 if [[ -d "/scratch" ]]; then
 	report_scratch_usage $USER
