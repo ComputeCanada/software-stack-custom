@@ -19,11 +19,15 @@ EXIT_CODE_EXTRACT_ERROR = 3
 def extract_info(p_oHosts):
     assert(type(p_oHosts) == type({}) and len(p_oHosts) == 0)
     if not os.environ.has_key('SLURM_NODELIST'): return False
-    if not os.environ.has_key('SLURM_NTASKS_PER_NODE'): return False
-    if not os.environ.has_key('SLURM_CPUS_PER_TASK'): return False
-
     HOSTS=os.environ['SLURM_NODELIST']
-    CORES_PER_NODE=int(os.environ['SLURM_NTASKS_PER_NODE'])*int(os.environ['SLURM_CPUS_PER_TASK'])
+    if not os.environ.has_key('SLURM_NTASKS_PER_NODE'): return False
+    ntasks_per_node = int(os.environ['SLURM_NTASKS_PER_NODE'])
+    if not os.environ.has_key('SLURM_CPUS_PER_TASK'): 
+        cpus_per_task = 1
+    else:
+        cpus_per_task = int(os.environ['SLURM_CPUS_PER_TASK'])
+
+    CORES_PER_NODE=ntasks_per_node * cpus_per_task
 
     prefix=HOSTS[0:3]
     for st in HOSTS.lstrip(prefix+"[").rstrip("]").split(","):
@@ -41,12 +45,12 @@ def extract_info(p_oHosts):
 if __name__ == "__main__":
     try:
         if len(sys.argv) != 3 or sys.argv[1] != "--format":
-            print "Usage : ", sys.argv[0], " --format (ANSYS-CFX | ANSYS-FLUENT | HP-MPI | PDSH | GAUSSIAN | CHARM | STAR-CCM+)"
+            print "Usage : ", sys.argv[0], " --format (ANSYS-CFX | ANSYS-FLUENT | HP-MPI | PDSH | GAUSSIAN | CHARM | STAR-CCM+ | MPIHOSTLIST)"
             sys.exit(EXIT_CODE_INVALID_USAGE)
 
         hosts = {}
         if not extract_info(hosts):
-            print "Could not extract hosts information from MOAB_TASKMAP."
+            print "Could not extract hosts information from SLURM environment variables."
             sys.exit(EXIT_CODE_EXTRACT_ERROR)
 
         fmt=sys.argv[2]
@@ -55,7 +59,7 @@ if __name__ == "__main__":
             for hostname, cores in hosts.iteritems():
                 nodes.append(hostname + "*" + str(cores))
             print ",".join(nodes)
-        elif fmt == "ANSYS-FLUENT":
+        elif fmt == "ANSYS-FLUENT" || fmt == "MPIHOSTLIST":
             for hostname, cores in hosts.iteritems():
                 print "\n".join([hostname] * int(cores))
         elif fmt == "HP-MPI" or fmt == "STAR-CCM+":
