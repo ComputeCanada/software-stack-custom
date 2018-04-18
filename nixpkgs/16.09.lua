@@ -72,8 +72,8 @@ setenv("EBVERSIONNIXPKGS", "16.09")
 
 prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2017/Core")
 
-local user = getenv_logged("USER","unknown")
-local home = getenv_logged("HOME",pathJoin("/home",user))
+local user = os.getenv("USER","unknown")
+local home = os.getenv("HOME",pathJoin("/home",user))
 if user ~= "ebuser" then
     prepend_path("MODULEPATH", pathJoin(home, ".local/easybuild/modules/2017/Core"))
 end
