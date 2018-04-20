@@ -5,6 +5,11 @@ if [[ $# -ge 1 ]]; then
 	VERBOSITY=$1
 fi
 
+mount | grep "on /home type lustre" &>/dev/null
+if [[ $? -eq 0 ]]; then HOME_TYPE=lustre; fi
+mount | grep "on /home type nfs" &>/dev/null
+if [[ $? -eq 0 ]]; then HOME_TYPE=nfs; fi
+
 function get_projects {
 	projects_links=$(find $HOME/projects -maxdepth 1 -type l)
 	groups=$(groups 2>/dev/null)
@@ -106,9 +111,9 @@ function report_project_usage {
 }
 
 printf "%40s %20s %20s\n" "Description" "Space" "# of files"
-if [[ "$CC_CLUSTER" == "cedar" ]]; then
+if [[ "$HOME_TYPE" == "lustre" ]]; then
 	report_home_usage_lustre $USER
-elif [[ "$CC_CLUSTER" == "graham" ]]; then
+elif [[ "$HOME_TYPE" == "nfs" ]]; then
 	report_home_usage_oceanstor $USER
 fi
 if [[ -d "/scratch" ]]; then
