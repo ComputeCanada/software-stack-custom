@@ -37,9 +37,15 @@ def extract_info(p_oHosts):
         finish=start
         if(len(d)==2):
             finish=int(d[1])
+	
+	if d[0][0] == '0':
+		padding=True
 
         for i in range(start,finish+1):
-            p_oHosts[prefix + str(i)] = CORES_PER_NODE
+            if padding:
+                p_oHosts[prefix + str(i).zfill(len(d[0]))] = CORES_PER_NODE
+            else:
+                p_oHosts[prefix + str(i)] = CORES_PER_NODE
 
     return True
 
