@@ -7,6 +7,7 @@
 
 import sys
 import os
+import socket
 
 EXIT_CODE_UNKNOWN_ERROR = 1
 EXIT_CODE_INVALID_USAGE = 2
@@ -55,11 +56,15 @@ if __name__ == "__main__":
 
         fmt=sys.argv[2]
         if fmt == "ANSYS-CFX":
+            master_host = socket.gethostname()
             nodes = []
             for hostname, cores in hosts.iteritems():
+                # the master host must absolutely use the same as the hostname returned by "hostname"
+                if hostname in master_host:
+                    hostname = master_host
                 nodes.append(hostname + "*" + str(cores))
             print ",".join(nodes)
-        elif fmt == "ANSYS-FLUENT" || fmt == "MPIHOSTLIST":
+        elif fmt == "ANSYS-FLUENT" or fmt == "MPIHOSTLIST":
             for hostname, cores in hosts.iteritems():
                 print "\n".join([hostname] * int(cores))
         elif fmt == "HP-MPI" or fmt == "STAR-CCM+":
