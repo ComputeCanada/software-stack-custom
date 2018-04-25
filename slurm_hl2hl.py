@@ -8,6 +8,7 @@
 import sys
 import os
 import socket
+import subprocess
 
 EXIT_CODE_UNKNOWN_ERROR = 1
 EXIT_CODE_INVALID_USAGE = 2
@@ -19,10 +20,10 @@ EXIT_CODE_EXTRACT_ERROR = 3
 """
 def extract_info(p_oHosts):
     assert(type(p_oHosts) == type({}) and len(p_oHosts) == 0)
-    if not os.environ.has_key('SLURM_NODELIST'): return False
-    HOSTS=os.environ['SLURM_NODELIST']
-    if not os.environ.has_key('SLURM_NTASKS_PER_NODE'): return False
-    ntasks_per_node = int(os.environ['SLURM_NTASKS_PER_NODE'])
+    if not os.environ.has_key('SLURM_NTASKS_PER_NODE'): 
+        ntasks_per_node=1
+    else:
+        ntasks_per_node = int(os.environ['SLURM_NTASKS_PER_NODE'])
     if not os.environ.has_key('SLURM_CPUS_PER_TASK'): 
         cpus_per_task = 1
     else:
@@ -30,23 +31,11 @@ def extract_info(p_oHosts):
 
     CORES_PER_NODE=ntasks_per_node * cpus_per_task
 
-    prefix=HOSTS[0:3]
-    for st in HOSTS.lstrip(prefix+"[").rstrip("]").split(","):
-        d=st.split("-")
-        start=int(d[0])
-        finish=start
-        if(len(d)==2):
-            finish=int(d[1])
-	
-	if d[0][0] == '0':
-		padding=True
-
-        for i in range(start,finish+1):
-            if padding:
-                p_oHosts[prefix + str(i).zfill(len(d[0]))] = CORES_PER_NODE
-            else:
-                p_oHosts[prefix + str(i)] = CORES_PER_NODE
-
+    p = subprocess.Popen(['scontrol', 'show',  'hostname'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    HOSTS, err = p.communicate()
+    for host in HOSTS.split("\n"):
+        if host:
+            p_oHosts[host] = CORES_PER_NODE
     return True
 
 if __name__ == "__main__":
