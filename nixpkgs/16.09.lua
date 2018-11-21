@@ -21,6 +21,8 @@ prepend_path("PYTHONPATH", "/cvmfs/soft.computecanada.ca/custom/python/site-pack
 setenv("PERL5OPT", "-I" .. pathJoin(root, "lib/perl5") .. " -I" .. pathJoin(root, "lib/perl5/site_perl"))
 prepend_path("PERL5LIB", pathJoin(root, "lib/perl5/site_perl"))
 prepend_path("PERL5LIB", pathJoin(root, "lib/perl5"))
+prepend_path("XDG_DATA_DIRS", pathJoin(root, "share"))
+prepend_path("XDG_CONFIG_DIRS", pathJoin(root, "etc/xdg"))
 setenv("TZDIR", pathJoin(root,"share/zoneinfo"))
 setenv("SSL_CERT_FILE", "/etc/pki/tls/certs/ca-bundle.crt")
 setenv("CURL_CA_BUNDLE", "/etc/pki/tls/certs/ca-bundle.crt")
