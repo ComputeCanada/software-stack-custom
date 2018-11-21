@@ -1,10 +1,3 @@
-if mode() == "load" then
-	local a = loaded_modules()
-	for k, v in pairs(a) do
-		unload(v["fullName"])
-	end
-	setenv("RSNT_ARCH","avx2")
-	for k, v in pairs(a) do
-		load(v["fullName"])
-	end
+if (mode() ~= "spider") then
+	prepend_path("MODULEPATH","/cvmfs/soft.computecanada.ca/custom/modules-avx2")
 end
