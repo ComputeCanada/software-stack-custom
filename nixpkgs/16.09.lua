@@ -39,6 +39,8 @@ local cc_cluster = os.getenv("CC_CLUSTER") or "computecanada"
 if not os.getenv("RSNT_ARCH") and mode() == "load" then
 	if cc_cluster == "cedar" or cc_cluster == "graham" or cc_cluster == "computecanada" then
 		setenv("RSNT_ARCH", "avx2")
+	elseif cc_cluster == "beluga" then
+		setenv("RSNT_ARCH", "avx512")
 	end
 end
 if not os.getenv("RSNT_INTERCONNECT") and mode() == "load" then
