@@ -56,7 +56,9 @@ end
 
 -- let pip use our wheel house
 local arch = os.getenv("RSNT_ARCH") or ""
-if arch == "avx2" then
+if arch == "avx512" then
+        setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-avx512.conf")
+elseif arch == "avx2" then
         setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-avx2.conf")
 elseif arch == "avx" then
         setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-avx.conf")
