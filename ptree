@@ -1,0 +1,4 @@
+#!/bin/sh
+
+ps f -eo pid,ppid,pgrp,user,%cpu,%mem,vsz,rss,time,stat,command --cols=130
+
