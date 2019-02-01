@@ -41,7 +41,7 @@ else
 	if [[ "$EBVERSIONMCR" =~ R201[23][ab] ]]; then 
 		XAPPLRESDIR=${MCRROOT}/X11/app-defaults ;
 	fi
-	if [[ $EBVERSIONMCR =~ R201[567][ab] ]]; then
+	if [[ $EBVERSIONMCR =~ R201[5678][ab] ]]; then
 		LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${MCRROOT}/sys/opengl/lib/glnxa64;
 	fi
 
