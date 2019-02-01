@@ -69,45 +69,77 @@ function scale_bytes {
 		echo "$num_bytes B"
 	fi
 }
+function validate_data {
+	if [[ ! $1 =~ ^[0-9]+$ ]]; then
+		echo 1
+	elif [[ ! $2 =~ ^[0-9]+$ ]]; then
+		echo 1
+	elif [[ ! $3 =~ ^[0-9]+$ ]]; then
+		echo 1
+	elif [[ ! $4 =~ ^[0-9]+$ ]]; then
+		echo 1
+	else
+		echo 0
+	fi
+}
 function report_home_usage_lustre {
 	who=$1
 	data=($(get_lustre_user_info $who /home))
-	usage_bytes=$(scale $((1000 * ${data[0]})))
-	quota_bytes=$(scale $((1000 * ${data[1]})))
-	usage_files=$(scale ${data[2]})
-	quota_files=$(scale ${data[3]})
+	valid=$(validate_data ${data[0]} ${data[1]} ${data[2]} ${data[3]})
+	if [[ $valid -ne 0 ]]; then
+		printf "%40s %60s\n" "Home (user $who)" "Error retrieving quota information"
+	else
+		usage_bytes=$(scale $((1000 * ${data[0]})))
+		quota_bytes=$(scale $((1000 * ${data[1]})))
+		usage_files=$(scale ${data[2]})
+		quota_files=$(scale ${data[3]})
 
-	printf "%40s %20s %20s\n" "Home (user $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+		printf "%40s %20s %20s\n" "Home (user $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+	fi
 }
 function report_home_usage_oceanstor {
 	who=$1
 	data=($(get_oceanstor_user_info $who))
-	usage_bytes=$(scale ${data[0]})
-	quota_bytes=$(scale ${data[1]})
-	usage_files=$(scale ${data[2]})
-	quota_files=$(scale ${data[3]})
+	valid=$(validate_data ${data[0]} ${data[1]} ${data[2]} ${data[3]})
+	if [[ $valid -ne 0 ]]; then
+		printf "%40s %60s\n" "Home (user $who)" "Error retrieving quota information"
+	else
+		usage_bytes=$(scale ${data[0]})
+		quota_bytes=$(scale ${data[1]})
+		usage_files=$(scale ${data[2]})
+		quota_files=$(scale ${data[3]})
 
-	printf "%40s %20s %20s\n" "Home (user $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+		printf "%40s %20s %20s\n" "Home (user $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+	fi
 }
 function report_scratch_usage {
 	who=$1
 	data=($(get_lustre_user_info $who /scratch))
-	usage_bytes=$(scale $((1000 * ${data[0]})))
-	quota_bytes=$(scale $((1000 * ${data[1]})))
-	usage_files=$(scale ${data[2]})
-	quota_files=$(scale ${data[3]})
-
-	printf "%40s %20s %20s\n" "Scratch (user $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+	valid=$(validate_data ${data[0]} ${data[1]} ${data[2]} ${data[3]})
+	if [[ $valid -ne 0 ]]; then
+		printf "%40s %60s\n" "Scratch (user $who)" "Error retrieving quota information"
+	else
+		usage_bytes=$(scale $((1000 * ${data[0]})))
+		quota_bytes=$(scale $((1000 * ${data[1]})))
+		usage_files=$(scale ${data[2]})
+		quota_files=$(scale ${data[3]})
+		printf "%40s %20s %20s\n" "Scratch (user $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+	fi
 }
 function report_project_usage {
 	who=$1
 	data=($(get_lustre_group_info $who /project))
-	usage_bytes=$(scale $((1000 * ${data[0]})))
-	quota_bytes=$(scale $((1000 * ${data[1]})))
-	usage_files=$(scale ${data[2]})
-	quota_files=$(scale ${data[3]})
+	valid=$(validate_data ${data[0]} ${data[1]} ${data[2]} ${data[3]})
+	if [[ $valid -ne 0 ]]; then
+		printf "%40s %60s\n" "Project (group $who)" "Error retrieving quota information"
+	else
+		usage_bytes=$(scale $((1000 * ${data[0]})))
+		quota_bytes=$(scale $((1000 * ${data[1]})))
+		usage_files=$(scale ${data[2]})
+		quota_files=$(scale ${data[3]})
 
-	printf "%40s %20s %20s\n" "Project (group $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+		printf "%40s %20s %20s\n" "Project (group $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+	fi
 }
 
 printf "%40s %20s %20s\n" "Description" "Space" "# of files"
