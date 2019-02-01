@@ -1,0 +1,1 @@
+$NIXUSER_PROFILE/bin/install --mode=u+rwX,go+rX,uo-s $@
