@@ -7,7 +7,7 @@ local interconnect = os.getenv("RSNT_INTERCONNECT") or ""
 if not arch or arch == "" then
 	if cc_cluster == "cedar" or cc_cluster == "graham" then
 		arch = "avx2"
-	elseif cc_cluster == "computecanada" then
+	else
 		arch = get_highest_supported_architecture()
 	end
 end
