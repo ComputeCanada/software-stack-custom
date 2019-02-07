@@ -63,10 +63,12 @@ setenv("EASYBUILD_BUILDPATH", pathJoin("/dev/shm", os.getenv("USER")))
 setenv("EBROOTGENTOO", root)
 setenv("EBVERSIONGENTOO", "2019")
 
+if (mode() ~= "spider") then -- for now
 if generic_gentoo then
 	prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2017/Core")
 else
 	prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2017/Core-" .. arch)
+end
 end
 
 local user = os.getenv("USER","unknown")
