@@ -28,8 +28,16 @@ setenv("CURL_CA_BUNDLE", "/etc/pki/tls/certs/ca-bundle.crt")
 setenv("PAGER", "less -R")
 pushenv("LESSOPEN", "|" .. pathJoin(root, "bin/lesspipe.sh %s"))
 setenv("LOCALE_ARCHIVE", pathJoin(root, "lib/locale/locale-archive"))
-pushenv("XDG_DATA_DIRS", pathJoin(root, "share") .. ":/usr/local/share:/usr/share")
-pushenv("XDG_CONFIG_DIRS", pathJoin(root, "etc/xdg") .. ":/etc/xdg")
+if os.getenv("XDG_DATA_DIRS") then
+	prepend_path("XDG_DATA_DIRS", pathJoin(root, "share"))
+else
+	setenv("XDG_DATA_DIRS", pathJoin(root, "share") .. ":/usr/local/share:/usr/share")
+end
+if os.getenv("XDG_CONFIG_DIRS") then
+	prepend_path("XDG_CONFIG_DIRS", pathJoin(root, "etc/xdg"))
+else
+	setenv("XDG_CONFIG_DIRS", pathJoin(root, "etc/xdg") .. ":/etc/xdg")
+end
 
 -- silence harmless MXM warnings from libmxm
 setenv("MXM_LOG_LEVEL", "error")
