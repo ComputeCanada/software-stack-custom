@@ -1,0 +1,5 @@
+#!/bin/sh
+# This is a workaround file for the _yum shell function used
+# by CentOS bash completion. If this file is in PATH it will
+# not try to find _yum in the wrong places for Nix bash.
+/bin/false
