@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/cvmfs/soft.computecanada.ca/nix/var/nix/profiles/ruby-2.3.1/bin/ruby
 #----------------------------------------------------------------------------------------#
 ### Name: ilde_nodes                                                                     #
 ### Version: 1.0                                                                         #
