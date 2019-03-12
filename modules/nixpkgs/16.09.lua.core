@@ -101,7 +101,7 @@ if not project_dir and stat(def_project_link,"type") == "link" then
 	-- find the directory this link points to
 	project_dir = subprocess("readlink " .. def_project_link)
 end
-if project_dir then
+if project_dir and (stat(project_dir,"type") == "link" or stat(project_dir, "type") == "dir") then
 	-- if PROJECT is not defined, or if it was defined by us previously (i.e. in the login environment), define it
 	if not os.getenv("PROJECT") or os.getenv("PROJECT") == os.getenv("CC_PROJECT") then
 		setenv("PROJECT", project_dir)
