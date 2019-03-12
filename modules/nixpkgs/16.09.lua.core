@@ -95,24 +95,6 @@ local def_scratch_dir = pathJoin("/scratch",user)
 local def_project_link = pathJoin(home,"project")
 local project_dir = nil
 
--- if we are in a job, define the project directory based on the SLURM project if it exists
-local account = os.getenv("SLURM_JOB_ACCOUNT")
-local jobid = os.getenv("SLURM_JOBID")
-if false and jobid then
-	local account = os.getenv("SLURM_JOB_ACCOUNT")
-	if account then
-		-- remove the _cpu or _gpu suffixes
-		account = account:gsub("^(.*)_cpu$","%1")
-		account = account:gsub("^(.*)_gpu$","%1")
-	
-		local test_project_link = pathJoin(home,"projects",account)
-		-- test if there is such a project link
-		if stat(test_project_link,"type") == "link" then
-			-- find the directory this link points to
-			project_dir = subprocess("readlink " .. test_project_link)
-		end
-	end
-end
 -- if project_dir was not found based on SLURM_JOB_ACCOUNT, test the default project 
 project_dir = def_project_link
 if not project_dir and stat(def_project_link,"type") == "link" then
