@@ -75,7 +75,15 @@ if os.getenv("SLURM_TMPDIR") and (not os.getenv("TMPDIR") or os.getenv("TMPDIR")
 end
 
 -- let pip use our wheel house
-setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-" .. arch .. ".conf")
+if arch == "avx512" then
+        setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-avx512.conf")
+elseif arch == "avx2" then
+        setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-avx2.conf")
+elseif arch == "avx" then
+        setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-avx.conf")
+else
+        setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip.conf")
+end
 
 -- also make easybuild and easybuild-generated modules accessible
 prepend_path("PATH", "/cvmfs/soft.computecanada.ca/easybuild/bin")
