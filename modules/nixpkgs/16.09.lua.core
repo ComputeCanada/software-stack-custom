@@ -138,11 +138,9 @@ if not os.getenv("SACCT_FORMAT") then
 	setenv("SACCT_FORMAT","Account,User,JobID,Start,End,AllocCPUS,Elapsed,AllocTRES%30,CPUTime,AveRSS,MaxRSS,MaxRSSTask,MaxRSSNode,NodeList,ExitCode,State%20")
 end
 
--- if LS_COLORS is not already defined, define it
+-- do not colour certain attributes of ls
 -- this avoids inode lookups for plain "ls"
-if not os.getenv("LS_COLORS") then
-	setenv("LS_COLORS", "su=00:sg=00:ca=00:ow=00:st=00:tw=00:ex=00:")
-end
+append_path("LS_COLORS", "su=00:sg=00:ca=00:ow=00:st=00:tw=00:ex=00:")
 
 set_alias("quota", "diskusage_report")
 
