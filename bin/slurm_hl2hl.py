@@ -9,6 +9,7 @@ import sys
 import os
 import socket
 import subprocess
+from collections import OrderedDict
 
 EXIT_CODE_UNKNOWN_ERROR = 1
 EXIT_CODE_INVALID_USAGE = 2
@@ -19,7 +20,7 @@ EXIT_CODE_EXTRACT_ERROR = 3
  from the SLURM_NODELIST environment variable
 """
 def extract_info(p_oHosts):
-    assert(type(p_oHosts) == type({}) and len(p_oHosts) == 0)
+    assert(type(p_oHosts) == type(OrderedDict()) and len(p_oHosts) == 0)
     if not os.environ.has_key('SLURM_NTASKS_PER_NODE'): 
         ntasks_per_node=1
     else:
@@ -44,7 +45,7 @@ if __name__ == "__main__":
             print "Usage : ", sys.argv[0], " --format (ANSYS-CFX | ANSYS-FLUENT | HP-MPI | PDSH | GAUSSIAN | CHARM | STAR-CCM+ | MPIHOSTLIST)"
             sys.exit(EXIT_CODE_INVALID_USAGE)
 
-        hosts = {}
+        hosts = OrderedDict()
         if not extract_info(hosts):
             print "Could not extract hosts information from SLURM environment variables."
             sys.exit(EXIT_CODE_EXTRACT_ERROR)
@@ -73,5 +74,6 @@ if __name__ == "__main__":
             for hostname, cores in hosts.iteritems():
                 print "host " + hostname
     except:
+        print("An error occured")
         sys.exit(EXIT_CODE_UNKNOWN_ERROR)
 
