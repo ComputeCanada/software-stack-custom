@@ -40,9 +40,6 @@ else
 	setenv("XDG_CONFIG_DIRS", pathJoin(root, "etc/xdg") .. ":/etc/xdg")
 end
 
--- silence harmless MXM warnings from libmxm
-setenv("MXM_LOG_LEVEL", "error")
-
 require("os")
 -- Define RSNT variables
 -- do something only at load time, if not already defined. Otherwise, unloading the module will lose the predefined value if there is one
