@@ -21,8 +21,18 @@ EXIT_CODE_EXTRACT_ERROR = 3
 """
 def extract_info(p_oHosts):
     assert(type(p_oHosts) == type(OrderedDict()) and len(p_oHosts) == 0)
-    if not os.environ.has_key('SLURM_NTASKS_PER_NODE'): 
+    if not os.environ.has_key('SLURM_NTASKS_PER_NODE') and not os.environ.has_key('SLURM_TASKS_PER_NODE'): 
         ntasks_per_node=1
+    elif ',' in os.environ['SLURM_TASKS_PER_NODE']:
+        val = os.environ['SLURM_TASKS_PER_NODE']
+        mylist = val.split(',')
+        ntasks_per_node = []
+        for e in mylist:
+            if 'x' in e:
+                v,m = tuple(e.replace(')','').replace('(','').split('x'))
+                ntasks_per_node += [int(v)]*int(m)
+            else:
+                ntasks_per_node += [int(e)]
     else:
         ntasks_per_node = int(os.environ['SLURM_NTASKS_PER_NODE'])
     if not os.environ.has_key('SLURM_CPUS_PER_TASK'): 
@@ -30,13 +40,19 @@ def extract_info(p_oHosts):
     else:
         cpus_per_task = int(os.environ['SLURM_CPUS_PER_TASK'])
 
-    CORES_PER_NODE=ntasks_per_node * cpus_per_task
 
     p = subprocess.Popen(['scontrol', 'show',  'hostname'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     HOSTS, err = p.communicate()
-    for host in HOSTS.split("\n"):
+    HOSTS = HOSTS.split('\n')
+
+    if isinstance(ntasks_per_node,list):
+        CORES_PER_NODE = [ x * cpus_per_task for x in ntasks_per_node ]
+    else:
+        CORES_PER_NODE = [ntasks_per_node * cpus_per_task] * len(HOSTS)
+
+    for host,cores in zip(HOSTS,CORES_PER_NODE):
         if host:
-            p_oHosts[host] = CORES_PER_NODE
+            p_oHosts[host] = cores
     return True
 
 if __name__ == "__main__":
