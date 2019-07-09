@@ -24,12 +24,21 @@ function get_projects {
 	done
 	echo $projects
 }
-
+function get_projectinfo {
+	path=$1
+	lfs project -d $path 2>/dev/null | awk '{print $1,$2}'
+}
 function get_lustre_group_info {
 	# returns 4 values. space usage, space quota, file usage, file quota
 	group=$1
 	filesystem=$2
 	lfs quota -q -g $1 $2 | awk '{print $2,$3,$6,$7}' | sed -e 's/\*//g'
+}
+function get_lustre_project_info {
+	# returns 4 values. space usage, space quota, file usage, file quota
+	group=$1
+	filesystem=$2
+	lfs quota -q -p $1 $2 | awk '{print $2,$3,$6,$7}' | sed -e 's/\*//g'
 }
 function get_lustre_user_info {
 	# returns 4 values. space usage, space quota, file usage, file quota
@@ -126,19 +135,28 @@ function report_scratch_usage {
 		printf "%40s %20s %20s\n" "Scratch (user $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
 	fi
 }
-function report_project_usage {
+function report_nearline_project_usage {
 	who=$1
-	data=($(get_lustre_group_info $who /project))
+	filesystem=$2
+	project_info=($(get_projectinfo $filesystem/$who))
+	quota_type="group"
+	if [[ ${project_info[1]} == "P" ]]; then
+		quota_type="project"
+		pid=${project_info[0]}
+		data=($(get_lustre_project_info $pid $filesystem))
+	else
+		data=($(get_lustre_group_info $who $filesystem))
+	fi
 	valid=$(validate_data ${data[0]} ${data[1]} ${data[2]} ${data[3]})
 	if [[ $valid -ne 0 ]]; then
-		printf "%40s %60s\n" "Project (group $who)" "Error retrieving quota information"
+		printf "%40s %60s\n" "$filesystem ($quota_type $who)" "Error retrieving quota information"
 	else
 		usage_bytes=$(scale $((1000 * ${data[0]})))
 		quota_bytes=$(scale $((1000 * ${data[1]})))
 		usage_files=$(scale ${data[2]})
 		quota_files=$(scale ${data[3]})
 
-		printf "%40s %20s %20s\n" "Project (group $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+		printf "%40s %20s %20s\n" "$filesystem ($quota_type $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
 	fi
 }
 
@@ -153,6 +171,11 @@ if [[ -d "/scratch" ]]; then
 fi
 if [[ -d "/project" ]]; then
 	for p in $USER $(get_projects $USER); do
-		report_project_usage $p
+		report_nearline_project_usage $p /project
+	done
+fi
+if [[ -d "/nearline" ]]; then
+	for p in $(get_projects $USER); do
+		report_nearline_project_usage $p /nearline
 	done
 fi
