@@ -11,7 +11,8 @@ mount | grep "on /home type nfs" &>/dev/null
 if [[ $? -eq 0 ]]; then HOME_TYPE=nfs; fi
 
 function get_projects {
-	projects_links=$(find $HOME/projects -maxdepth 1 -type l)
+	FS=$1
+	projects_links=$(find $HOME/$FS -maxdepth 1 -type l )
 	groups=$(groups 2>/dev/null)
 	groups=${groups// /|}
 	projects=""
@@ -170,12 +171,12 @@ if [[ -d "/scratch" ]]; then
 	report_scratch_usage $USER
 fi
 if [[ -d "/project" ]]; then
-	for p in $USER $(get_projects $USER); do
+	for p in $USER $(get_projects "projects"); do
 		report_nearline_project_usage $p /project
 	done
 fi
 if [[ -d "/nearline" ]]; then
-	for p in $(get_projects $USER); do
+	for p in $(get_projects "nearline"); do
 		report_nearline_project_usage $p /nearline
 	done
 fi
