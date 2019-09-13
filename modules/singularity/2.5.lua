@@ -14,4 +14,11 @@ version differences between the source and target systems.
 local root = "/opt/software/singularity-2.5"
 
 prepend_path("PATH", pathJoin(root, "bin"))
+local slurm_tmpdir = os.getenv("SLURM_TMPDIR") or nil
+local scratch = os.getenv("SCRATCH") or "/tmp"
+if slurm_tmpdir then
+	setenv("SINGULARITY_TMPDIR",slurm_tmpdir)
+else
+	setenv("SINGULARITY_TMPDIR",scratch)
+end
 
