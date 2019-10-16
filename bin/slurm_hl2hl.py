@@ -21,7 +21,7 @@ EXIT_CODE_EXTRACT_ERROR = 3
 """
 def extract_info(p_oHosts):
     assert(type(p_oHosts) == type(OrderedDict()) and len(p_oHosts) == 0)
-    if not os.environ.has_key('SLURM_NTASKS_PER_NODE') and not os.environ.has_key('SLURM_TASKS_PER_NODE'): 
+    if not os.environ.has_key('SLURM_NTASKS_PER_NODE') and not os.environ.has_key('SLURM_TASKS_PER_NODE'):
         ntasks_per_node=1
     elif ',' in os.environ['SLURM_TASKS_PER_NODE']:
         val = os.environ['SLURM_TASKS_PER_NODE']
@@ -35,7 +35,7 @@ def extract_info(p_oHosts):
                 ntasks_per_node += [int(e)]
     else:
         ntasks_per_node = int(os.environ['SLURM_NTASKS_PER_NODE'])
-    if not os.environ.has_key('SLURM_CPUS_PER_TASK'): 
+    if not os.environ.has_key('SLURM_CPUS_PER_TASK'):
         cpus_per_task = 1
     else:
         cpus_per_task = int(os.environ['SLURM_CPUS_PER_TASK'])
@@ -58,7 +58,7 @@ def extract_info(p_oHosts):
 if __name__ == "__main__":
     try:
         if len(sys.argv) != 3 or sys.argv[1] != "--format":
-            print "Usage : ", sys.argv[0], " --format (ANSYS-CFX | ANSYS-FLUENT | HP-MPI | PDSH | GAUSSIAN | CHARM | STAR-CCM+ | MPIHOSTLIST)"
+            print "Usage : ", sys.argv[0], " --format (ANSYS-CFX | ANSYS-FLUENT | HP-MPI | PDSH | GAUSSIAN | CHARM | STAR-CCM+ | MPIHOSTLIST | GNU-Parallel)"
             sys.exit(EXIT_CODE_INVALID_USAGE)
 
         hosts = OrderedDict()
@@ -89,7 +89,8 @@ if __name__ == "__main__":
         elif fmt == "CHARM":
             for hostname, cores in hosts.iteritems():
                 print "host " + hostname
+        elif fmt == "GNU-Parallel":
+            print ",".join(["{}/{}".format(c,h) for h,c in hosts.iteritems()])
     except:
         print("An error occured")
         sys.exit(EXIT_CODE_UNKNOWN_ERROR)
-
