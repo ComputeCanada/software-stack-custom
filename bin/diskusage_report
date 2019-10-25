@@ -27,6 +27,9 @@ function get_projects {
 }
 function get_projectinfo {
 	path=$1
+	if [[ -L $path ]]; then
+		path=$(readlink -f $path)
+	fi
 	lfs project -d $path 2>/dev/null | awk '{print $1,$2}'
 }
 function get_lustre_group_info {
