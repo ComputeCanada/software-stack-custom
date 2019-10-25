@@ -5,11 +5,6 @@ if [[ $# -ge 1 ]]; then
 	VERBOSITY=$1
 fi
 
-mount | grep "on /home type lustre" &>/dev/null
-if [[ $? -eq 0 ]]; then HOME_TYPE=lustre; fi
-mount | grep "on /home type nfs" &>/dev/null
-if [[ $? -eq 0 ]]; then HOME_TYPE=nfs; fi
-
 function get_projects {
 	FS=$1
 	projects_links=$(find $HOME/$FS -maxdepth 1 -type l )
@@ -89,91 +84,75 @@ function validate_data {
 		echo 0
 	fi
 }
-function report_home_usage_lustre {
+function report_data {
 	who=$1
-	data=($(get_lustre_user_info $who /home))
-	valid=$(validate_data ${data[0]} ${data[1]} ${data[2]} ${data[3]})
-	if [[ $valid -ne 0 ]]; then
-		printf "%40s %60s\n" "Home (user $who)" "Error retrieving quota information"
-	else
-		usage_bytes=$(scale $((1000 * ${data[0]})))
-		quota_bytes=$(scale $((1000 * ${data[1]})))
-		usage_files=$(scale ${data[2]})
-		quota_files=$(scale ${data[3]})
+	fs=$2
+	quotatype=$3
+	usage_space=$4
+	quota_space=$5
+	usage_files=$6
+	quota_files=$7
+	space_unit=$8
 
-		printf "%40s %20s %20s\n" "Home (user $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
-	fi
-}
-function report_home_usage_oceanstor {
-	who=$1
-	data=($(get_oceanstor_user_info $who))
-	valid=$(validate_data ${data[0]} ${data[1]} ${data[2]} ${data[3]})
+	valid=$(validate_data $usage_space $quota_space $usage_files $quota_files)
 	if [[ $valid -ne 0 ]]; then
-		printf "%40s %60s\n" "Home (user $who)" "Error retrieving quota information"
+		printf "%40s %60s\n" "$fs ($quotatype $who)" "Error retrieving quota information"
 	else
-		usage_bytes=$(scale ${data[0]})
-		quota_bytes=$(scale ${data[1]})
-		usage_files=$(scale ${data[2]})
-		quota_files=$(scale ${data[3]})
+		if [[ "$space_unit" == "kb" ]]; then
+			usage_bytes=$((1000*$usage_space))
+			quota_bytes=$((1000*$quota_space))
+		fi
+		usage_bytes=$(scale $usage_space)
+		quota_bytes=$(scale $quota_space)
+		usage_files=$(scale $usage_files)
+		quota_files=$(scale $quota_files)
 
-		printf "%40s %20s %20s\n" "Home (user $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
-	fi
-}
-function report_scratch_usage {
-	who=$1
-	data=($(get_lustre_user_info $who /scratch))
-	valid=$(validate_data ${data[0]} ${data[1]} ${data[2]} ${data[3]})
-	if [[ $valid -ne 0 ]]; then
-		printf "%40s %60s\n" "Scratch (user $who)" "Error retrieving quota information"
-	else
-		usage_bytes=$(scale $((1000 * ${data[0]})))
-		quota_bytes=$(scale $((1000 * ${data[1]})))
-		usage_files=$(scale ${data[2]})
-		quota_files=$(scale ${data[3]})
-		printf "%40s %20s %20s\n" "Scratch (user $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
-	fi
-}
-function report_nearline_project_usage {
-	who=$1
-	filesystem=$2
-	project_info=($(get_projectinfo $filesystem/$who))
-	quota_type="group"
-	if [[ ${project_info[1]} == "P" ]]; then
-		quota_type="project"
-		pid=${project_info[0]}
-		data=($(get_lustre_project_info $pid $filesystem))
-	else
-		data=($(get_lustre_group_info $who $filesystem))
-	fi
-	valid=$(validate_data ${data[0]} ${data[1]} ${data[2]} ${data[3]})
-	if [[ $valid -ne 0 ]]; then
-		printf "%40s %60s\n" "$filesystem ($quota_type $who)" "Error retrieving quota information"
-	else
-		usage_bytes=$(scale $((1000 * ${data[0]})))
-		quota_bytes=$(scale $((1000 * ${data[1]})))
-		usage_files=$(scale ${data[2]})
-		quota_files=$(scale ${data[3]})
-
-		printf "%40s %20s %20s\n" "$filesystem ($quota_type $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+		printf "%40s %20s %20s\n" "$fs ($quotatype $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
 	fi
 }
 
+mount | grep "on /home type lustre" &>/dev/null
+if [[ $? -eq 0 ]]; then HOME_TYPE=lustre; fi
+mount | grep "on /home type nfs" &>/dev/null
+if [[ $? -eq 0 ]]; then HOME_TYPE=nfs; fi
+function find_and_report_usage {
+	who=$1
+	fs=$2
+
+	fs_name=$fs
+#	fs_name=${fs:1}      # remove leading /
+#	fs_name=${fs_name^}  # capitalize first letter
+	if [[ "$fs" == "/home" && "$HOME_TYPE" == "nfs" ]]; then
+		data=($(get_oceanstor_user_info $who))
+		report_data $who $fs_name user ${data[0]} ${data[1]} ${data[2]} ${data[3]} b
+	else
+		project_info=($(get_projectinfo $fs/$who))
+		if [[ ${project_info[1]} == "P" ]]; then
+			quota_type="project"
+			pid=${project_info[0]}
+			data=($(get_lustre_project_info $pid $fs))
+		elif [[ "$fs" == "/home" || "$fs" == "/scratch" ]]; then
+			quota_type="user"
+			data=($(get_lustre_user_info $who $fs))
+		else
+			quota_type="group"
+			data=($(get_lustre_group_info $who $fs))
+		fi
+		report_data $who $fs_name $quota_type ${data[0]} ${data[1]} ${data[2]} ${data[3]} kb
+	fi
+}
 printf "%40s %20s %20s\n" "Description" "Space" "# of files"
-if [[ "$HOME_TYPE" == "lustre" ]]; then
-	report_home_usage_lustre $USER
-elif [[ "$HOME_TYPE" == "nfs" ]]; then
-	report_home_usage_oceanstor $USER
-fi
+find_and_report_usage $USER "/home"
 if [[ -d "/scratch" ]]; then
-	report_scratch_usage $USER
+	find_and_report_usage $USER "/scratch" 
 fi
 if [[ -d "/project" ]]; then
 	for p in $USER $(get_projects "projects"); do
-		report_nearline_project_usage $p /project
+		find_and_report_usage $p /project
 	done
 fi
 if [[ -d "/nearline" ]]; then
 	for p in $(get_projects "nearline"); do
-		report_nearline_project_usage $p /nearline
+		find_and_report_usage $p /nearline
 	done
 fi
