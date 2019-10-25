@@ -34,20 +34,14 @@ function get_projectinfo {
 }
 function get_lustre_group_info {
 	# returns 4 values. space usage, space quota, file usage, file quota
-	group=$1
-	filesystem=$2
 	lfs quota -q -g $1 $2 | awk '{print $2,$3,$6,$7}' | sed -e 's/\*//g'
 }
 function get_lustre_project_info {
 	# returns 4 values. space usage, space quota, file usage, file quota
-	group=$1
-	filesystem=$2
 	lfs quota -q -p $1 $2 | awk '{print $2,$3,$6,$7}' | sed -e 's/\*//g'
 }
 function get_lustre_user_info {
 	# returns 4 values. space usage, space quota, file usage, file quota
-	user=$1
-	filesystem=$2
 	lfs quota -q -u $1 $2 | awk '{print $2,$3,$6,$7}' | sed -e 's/\*//g'
 }
 function get_oceanstor_user_info {
