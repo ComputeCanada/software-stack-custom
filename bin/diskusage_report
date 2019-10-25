@@ -99,8 +99,8 @@ function report_data {
 		printf "%40s %60s\n" "$fs ($quotatype $who)" "Error retrieving quota information"
 	else
 		if [[ "$space_unit" == "kb" ]]; then
-			usage_bytes=$((1000*$usage_space))
-			quota_bytes=$((1000*$quota_space))
+			usage_space=$((1000*$usage_space))
+			quota_space=$((1000*$quota_space))
 		fi
 		usage_bytes=$(scale $usage_space)
 		quota_bytes=$(scale $quota_space)
