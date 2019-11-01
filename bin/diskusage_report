@@ -39,6 +39,16 @@ function get_lustre_user_info {
 	# returns 4 values. space usage, space quota, file usage, file quota
 	lfs quota -q -u $1 $2 | awk '{print $2,$3,$6,$7}' | sed -e 's/\*//g'
 }
+function get_gpfs_info {
+	# takes 'user|group filesystem u|g', where the latter is 'type'
+	PTH="/opt/software/diskusage"
+	t=$3
+	[[ "$t" == "user" ]] && t="u"
+	[[ "$t" == "group" ]] && t="g"
+	# returns 9 values. time, space usage, space soft quota, space hard quota,
+	#   space in doubt, grace period, file usage, file soft quota, file hard quota
+	tail -1 $PTH/$CC_CLUSTER/$t/$2/$1 | awk '{print $1,$4,$5,$6,$7,$8,$10,$11,$12}' | sed -e 's/\*//g'
+}
 function get_oceanstor_user_info {
         user=$1
 	$(dirname $0)/oceanstor-quota $user
@@ -115,6 +125,8 @@ mount | grep "on /home type lustre" &>/dev/null
 if [[ $? -eq 0 ]]; then HOME_TYPE=lustre; fi
 mount | grep "on /home type nfs" &>/dev/null
 if [[ $? -eq 0 ]]; then HOME_TYPE=nfs; fi
+mount | grep "on /home.* type gpfs" &>/dev/null
+if [[ $? -eq 0 ]]; then HOME_TYPE=gpfs; fi
 function find_and_report_usage {
 	who=$1
 	fs=$2
@@ -125,6 +137,11 @@ function find_and_report_usage {
 	if [[ "$fs" == "/home" && "$HOME_TYPE" == "nfs" ]]; then
 		data=($(get_oceanstor_user_info $who))
 		report_data $who $fs_name user ${data[0]} ${data[1]} ${data[2]} ${data[3]} b
+	elif [[ "$HOME_TYPE" == "gpfs" ]]; then
+		quota_type="user"
+		[[ "$fs" == "/project" ]] && quota_type="group"
+		data=($(get_gpfs_info $who $fs $quota_type))
+		report_data $who $fs_name $quota_type ${data[1]} ${data[2]} ${data[6]} ${data[7]} kb
 	else
 		project_info=($(get_projectinfo $fs/$who))
 		if [[ ${project_info[1]} == "P" ]]; then
@@ -147,7 +164,7 @@ if [[ -d "/scratch" ]]; then
 	find_and_report_usage $USER "/scratch" 
 fi
 if [[ -d "/project" ]]; then
-	for p in $USER $(get_projects "projects"); do
+	for p in $(get_projects "projects"); do
 		find_and_report_usage $p /project
 	done
 fi
