@@ -140,6 +140,8 @@ function find_and_report_usage {
 	elif [[ "$HOME_TYPE" == "gpfs" ]]; then
 		quota_type="user"
 		[[ "$fs" == "/project" ]] && quota_type="group"
+		# - short circuit in this case...
+		[[ "$fs" == "/project" && "$who" == "$USER" ]] && return 0
 		data=($(get_gpfs_info $who $fs $quota_type))
 		report_data $who $fs_name $quota_type ${data[1]} ${data[2]} ${data[6]} ${data[7]} kb
 	else
