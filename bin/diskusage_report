@@ -164,7 +164,7 @@ if [[ -d "/scratch" ]]; then
 	find_and_report_usage $USER "/scratch" 
 fi
 if [[ -d "/project" ]]; then
-	for p in $(get_projects "projects"); do
+	for p in $USER $(get_projects "projects"); do
 		find_and_report_usage $p /project
 	done
 fi
