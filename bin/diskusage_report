@@ -5,6 +5,16 @@ if [[ $# -ge 1 ]]; then
 	VERBOSITY=$1
 fi
 
+REPORT_USER_QUOTA_ON_PROJECT=0
+if [[ "$CC_CLUSTER" == "cedar" || "$CC_CLUSTER" == "graham" || "$CC_CLUSTER" == "beluga" ]]; then
+	REPORT_USER_QUOTA_ON_PROJECT=1
+fi
+QUOTA_IN_FILE=1
+if [[ "$CC_CLUSTER" == "siku" ]]; then
+	QUOTA_IN_FILES=1
+	QUOTA_INFO_PATH="/opt/software/diskusage"
+fi
+
 function get_projects {
 	FS=$1
 	projects_links=$(find $HOME/$FS -maxdepth 1 -type l )
@@ -39,15 +49,14 @@ function get_lustre_user_info {
 	# returns 4 values. space usage, space quota, file usage, file quota
 	lfs quota -q -u $1 $2 | awk '{print $2,$3,$6,$7}' | sed -e 's/\*//g'
 }
-function get_gpfs_info {
+function get_quota_info_from_files {
 	# takes 'user|group filesystem u|g', where the latter is 'type'
-	PTH="/opt/software/diskusage"
 	t=$3
 	[[ "$t" == "user" ]] && t="u"
 	[[ "$t" == "group" ]] && t="g"
 	# returns 9 values. time, space usage, space soft quota, space hard quota,
 	#   space in doubt, grace period, file usage, file soft quota, file hard quota
-	tail -1 $PTH/$CC_CLUSTER/$t/$2/$1 | awk '{print $1,$4,$5,$6,$7,$8,$10,$11,$12}' | sed -e 's/\*//g'
+	tail -1 $QUOTA_INFO_PATH/$CC_CLUSTER/$t/$2/$1 | awk '{print $1,$4,$5,$6,$7,$8,$10,$11,$12}' | sed -e 's/\*//g'
 }
 function get_oceanstor_user_info {
         user=$1
@@ -134,30 +143,30 @@ function find_and_report_usage {
 	fs_name=$fs
 #	fs_name=${fs:1}      # remove leading /
 #	fs_name=${fs_name^}  # capitalize first letter
-	if [[ "$fs" == "/home" && "$HOME_TYPE" == "nfs" ]]; then
-		data=($(get_oceanstor_user_info $who))
-		report_data $who $fs_name user ${data[0]} ${data[1]} ${data[2]} ${data[3]} b
-	elif [[ "$HOME_TYPE" == "gpfs" ]]; then
+	if [[ "$QUOTA_IN_FILES" == 1 ]]; then
 		quota_type="user"
 		[[ "$fs" == "/project" ]] && quota_type="group"
-		# - short circuit in this case...
-		[[ "$fs" == "/project" && "$who" == "$USER" ]] && return 0
-		data=($(get_gpfs_info $who $fs $quota_type))
+		data=($(get_quota_info_from_files $who $fs $quota_type))
 		report_data $who $fs_name $quota_type ${data[1]} ${data[2]} ${data[6]} ${data[7]} kb
 	else
-		project_info=($(get_projectinfo $fs/$who))
-		if [[ ${project_info[1]} == "P" ]]; then
-			quota_type="project"
-			pid=${project_info[0]}
-			data=($(get_lustre_project_info $pid $fs))
-		elif [[ "$fs" == "/home" || "$fs" == "/scratch" ]]; then
-			quota_type="user"
-			data=($(get_lustre_user_info $who $fs))
+		if [[ "$fs" == "/home" && "$HOME_TYPE" == "nfs" ]]; then
+			data=($(get_oceanstor_user_info $who))
+			report_data $who $fs_name user ${data[0]} ${data[1]} ${data[2]} ${data[3]} b
 		else
-			quota_type="group"
-			data=($(get_lustre_group_info $who $fs))
+			project_info=($(get_projectinfo $fs/$who))
+			if [[ ${project_info[1]} == "P" ]]; then
+				quota_type="project"
+				pid=${project_info[0]}
+				data=($(get_lustre_project_info $pid $fs))
+			elif [[ "$fs" == "/home" || "$fs" == "/scratch" ]]; then
+				quota_type="user"
+				data=($(get_lustre_user_info $who $fs))
+			else
+				quota_type="group"
+				data=($(get_lustre_group_info $who $fs))
+			fi
+			report_data $who $fs_name $quota_type ${data[0]} ${data[1]} ${data[2]} ${data[3]} kb
 		fi
-		report_data $who $fs_name $quota_type ${data[0]} ${data[1]} ${data[2]} ${data[3]} kb
 	fi
 }
 printf "%40s %20s %20s\n" "Description" "Space" "# of files"
@@ -166,7 +175,10 @@ if [[ -d "/scratch" ]]; then
 	find_and_report_usage $USER "/scratch" 
 fi
 if [[ -d "/project" ]]; then
-	for p in $USER $(get_projects "projects"); do
+	if [[ "$REPORT_USER_QUOTA_ON_PROJECT" == "1" ]]; then
+		find_and_report_usage $USER /project
+	fi
+	for p in $(get_projects "projects"); do
 		find_and_report_usage $p /project
 	done
 fi
