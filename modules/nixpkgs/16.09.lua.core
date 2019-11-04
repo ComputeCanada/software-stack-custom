@@ -25,9 +25,11 @@ prepend_path("PERL5LIB", pathJoin(root, "lib/perl5/site_perl"))
 prepend_path("PERL5LIB", pathJoin(root, "lib/perl5"))
 setenv("TZDIR", pathJoin(root,"share/zoneinfo"))
 local posix = require "posix"
+-- RedHat based systems
 if posix.stat("/etc/pki/tls/certs/","type") == "directory" then
 	setenv("SSL_CERT_FILE", "/etc/pki/tls/certs/ca-bundle.crt")
 	setenv("CURL_CA_BUNDLE", "/etc/pki/tls/certs/ca-bundle.crt")
+-- Debian based systems
 elseif posix.stat("/etc/ssl/certs/","type") == "directory" then
 	setenv("SSL_CERT_FILE", "/etc/ssl/certs/ca-certificates.crt")
 	setenv("CURL_CA_BUNDLE", "/etc/ssl/certs/ca-certificates.crt")

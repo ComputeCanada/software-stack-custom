@@ -5,6 +5,11 @@ if [[ $# -ge 1 ]]; then
 	VERBOSITY=$1
 fi
 
+REPORT_USER_QUOTA_ON_PROJECT=0
+if [[ "$CC_CLUSTER" == "cedar" || "$CC_CLUSTER" == "graham" || "$CC_CLUSTER" == "beluga" ]]; then
+	REPORT_USER_QUOTA_ON_PROJECT=1
+fi
+
 function get_projects {
 	FS=$1
 	projects_links=$(find $HOME/$FS -maxdepth 1 -type l )
@@ -166,7 +171,10 @@ if [[ -d "/scratch" ]]; then
 	find_and_report_usage $USER "/scratch" 
 fi
 if [[ -d "/project" ]]; then
-	for p in $USER $(get_projects "projects"); do
+	if [[ "$REPORT_USER_QUOTA_ON_PROJECT" == "1" ]]; then
+		find_and_report_usage $USER /project
+	fi
+	for p in $(get_projects "projects"); do
 		find_and_report_usage $p /project
 	done
 fi
