@@ -57,7 +57,7 @@ def extract_info(p_oHosts):
     return True
 
 if __name__ == "__main__":
-#    try:
+    try:
         if len(sys.argv) != 3 or sys.argv[1] != "--format":
             print "Usage : ", sys.argv[0], " --format (ANSYS-CFX | ANSYS-FLUENT | HP-MPI | PDSH | GAUSSIAN | CHARM | STAR-CCM+ | MPIHOSTLIST | GNU-Parallel)"
             sys.exit(EXIT_CODE_INVALID_USAGE)
@@ -92,6 +92,6 @@ if __name__ == "__main__":
                 print "host " + hostname
         elif fmt == "GNU-Parallel":
             print ",".join(["{}/{}".format(c,h) for h,c in hosts.iteritems()])
-#    except:
-#        print("An error occured")
-#        sys.exit(EXIT_CODE_UNKNOWN_ERROR)
+    except:
+        print("An error occured")
+        sys.exit(EXIT_CODE_UNKNOWN_ERROR)
