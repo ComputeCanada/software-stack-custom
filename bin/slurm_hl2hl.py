@@ -23,7 +23,7 @@ def extract_info(p_oHosts):
     assert(type(p_oHosts) == type(OrderedDict()) and len(p_oHosts) == 0)
     if not os.environ.has_key('SLURM_NTASKS_PER_NODE') and not os.environ.has_key('SLURM_TASKS_PER_NODE'):
         ntasks_per_node=1
-    elif ',' in os.environ['SLURM_TASKS_PER_NODE']:
+    elif ',' in os.environ.get('SLURM_TASKS_PER_NODE', ''):
         val = os.environ['SLURM_TASKS_PER_NODE']
         mylist = val.split(',')
         ntasks_per_node = []
@@ -34,7 +34,8 @@ def extract_info(p_oHosts):
             else:
                 ntasks_per_node += [int(e)]
     else:
-        ntasks_per_node = int(os.environ['SLURM_NTASKS_PER_NODE'])
+        ntasks_per_node = int(os.environ.get('SLURM_NTASKS_PER_NODE',
+                                             os.environ.get('SLURM_TASKS_PER_NODE', 1)))
     if not os.environ.has_key('SLURM_CPUS_PER_TASK'):
         cpus_per_task = 1
     else:

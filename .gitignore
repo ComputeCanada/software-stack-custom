@@ -1,4 +1,5 @@
 anaconda
 python
 software
+*.pyc
 
