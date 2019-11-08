@@ -13,6 +13,7 @@ QUOTA_IN_FILES=0
 if [[ "$CC_CLUSTER" == "siku" ]]; then
 	QUOTA_IN_FILES=1
 	QUOTA_INFO_PATH="/opt/software/diskusage"
+	QUOTA_UPDATE_INTERVAL="every 3 hours"
 fi
 
 function get_projects {
@@ -54,9 +55,14 @@ function get_quota_info_from_files {
 	t=$3
 	[[ "$t" == "user" ]] && t="u"
 	[[ "$t" == "group" ]] && t="g"
-	# returns 9 values. time, space usage, space soft quota, space hard quota,
-	#   space in doubt, grace period, file usage, file soft quota, file hard quota
-	tail -1 $QUOTA_INFO_PATH/$CC_CLUSTER/$t/$2/$1 | awk '{print $1,$4,$5,$6,$7,$8,$10,$11,$12}' | sed -e 's/\*//g'
+	quota_file="$QUOTA_INFO_PATH/$CC_CLUSTER/$t/$2/$1"
+	if [[ -f $quota_file ]]; then
+		# returns 9 values. time, space usage, space soft quota, space hard quota,
+		#   space in doubt, grace period, file usage, file soft quota, file hard quota
+		tail -1 $quota_file | awk '{print $1,$4,$5,$6,$7,$8,$10,$11,$12}' | sed -e 's/\*//g'
+	else
+		echo "QUOTA_FILE_NOT_FOUND"
+	fi
 }
 function get_oceanstor_user_info {
         user=$1
@@ -145,7 +151,11 @@ function find_and_report_usage {
 		quota_type="user"
 		[[ "$fs" == "/project" ]] && quota_type="group"
 		data=($(get_quota_info_from_files $who $fs $quota_type))
-		report_data $who $fs_name $quota_type ${data[1]} ${data[2]} ${data[6]} ${data[7]} kb
+		if [[ "$data" == "QUOTA_FILE_NOT_FOUND" ]]; then
+			echo "NOT AVAILABLE: Quota-information on ${CC_CLUSTER^} is updated ${QUOTA_UPDATE_INTERVAL}. Please check again later."
+		else
+			report_data $who $fs_name $quota_type ${data[1]} ${data[2]} ${data[6]} ${data[7]} kb
+		fi
 	else
 		if [[ "$fs" == "/home" && "$HOME_TYPE" == "nfs" ]]; then
 			data=($(get_oceanstor_user_info $who))
