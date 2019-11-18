@@ -23,7 +23,7 @@ def extract_info(p_oHosts):
     assert(type(p_oHosts) == type(OrderedDict()) and len(p_oHosts) == 0)
     if not os.environ.has_key('SLURM_NTASKS_PER_NODE') and not os.environ.has_key('SLURM_TASKS_PER_NODE'):
         ntasks_per_node=1
-    elif ',' in os.environ.get('SLURM_TASKS_PER_NODE', ''):
+    elif any(c in os.environ.get('SLURM_TASKS_PER_NODE', '') for c in [',','(x']):
         val = os.environ['SLURM_TASKS_PER_NODE']
         mylist = val.split(',')
         ntasks_per_node = []
