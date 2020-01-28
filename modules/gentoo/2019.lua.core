@@ -145,5 +145,8 @@ end
 if not os.getenv("SACCT_FORMAT") then
 	setenv("SACCT_FORMAT","Account,User,JobID,Start,End,AllocCPUS,Elapsed,AllocTRES%30,CPUTime,AveRSS,MaxRSS,MaxRSSTask,MaxRSSNode,NodeList,ExitCode,State%20")
 end
-set_alias("quota", "diskusage_report")
+if not os.getenv("RSNT_NO_QUOTA_ALIAS") then
+	set_alias("quota", "diskusage_report")
+end 
+
 

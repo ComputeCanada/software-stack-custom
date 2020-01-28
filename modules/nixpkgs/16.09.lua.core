@@ -148,5 +148,8 @@ end
 -- this avoids inode lookups for plain "ls"
 append_path("LS_COLORS", "su=00:sg=00:ca=00:ow=00:st=00:tw=00:ex=00:")
 
-set_alias("quota", "diskusage_report")
+if not os.getenv("RSNT_NO_QUOTA_ALIAS") then
+	set_alias("quota", "diskusage_report")
+end 
+
 
