@@ -95,7 +95,7 @@ end
 
 pen_run = execute_w_catch(%Q{ squeue -ht PD,RUNNING -o "%P#%R#%T" -p #{partitions.join(',')} }).split("\n").map {|x| x.split('#') }
 actives,pendings = pen_run.partition { |x| x.last == 'RUNNING'; }
-pendings.keep_if {|x| /\(Resources\)$|\(Priority\)$/ =~ x[1] }
+pendings.keep_if {|x| /\(Resources\)$|\(Priority\)$|\(BadConstraints\)$|\(Nodes required for job are DOWN, DRAINED or reserved for jobs in higher priority partitions\)$/ =~ x[1] }
 pendings.map! { |x| [ x.first.partition(',').first, x[1,x.length] ] }
 pendings_hash = pendings.each_with_object(Hash.new { |h,k| h[k] = []}) do |(k,v),hash|
   hash[k] << v
