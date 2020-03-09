@@ -21,4 +21,5 @@ end
 local generic_nixpkgs = true
 
 assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/nixpkgs/16.09.lua.core"))(arch, interconnect, generic_nixpkgs)
+assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/CCconfig.lua"))()
 
