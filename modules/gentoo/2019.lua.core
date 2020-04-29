@@ -71,7 +71,7 @@ end
 -- also make easybuild and easybuild-generated modules accessible
 prepend_path("PATH", "/cvmfs/soft.computecanada.ca/easybuild/bin")
 setenv("EASYBUILD_CONFIGFILES", "/cvmfs/soft.computecanada.ca/easybuild/config.cfg")
-setenv("EASYBUILD_BUILDPATH", pathJoin("/dev/shm", os.getenv("USER")))
+setenv("EASYBUILD_BUILDPATH", pathJoin("/tmp", os.getenv("USER")))
 
 -- EPREFIX is the root but use EBROOTGENTOO as $EPREFIX/usr so it can be used instead of
 -- EBROOTSOMETHINGELSE without modification.

@@ -21,3 +21,4 @@ end
 local generic_gentoo = true
 
 assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/gentoo/2019.lua.core"))(arch, interconnect, generic_gentoo)
+
