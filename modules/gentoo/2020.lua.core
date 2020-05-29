@@ -1,0 +1,91 @@
+local arch, interconnect, generic_gentoo=...
+
+help([[Gentoo prefix is Gentoo Linux installed in a prefix - Homepage: https://wiki.gentoo.org/wiki/Project:Prefix]])
+whatis("Gentoo prefix is Gentoo Linux installed in a prefix - Homepage: https://wiki.gentoo.org/wiki/Project:Prefix")
+
+add_property(   "lmod", "sticky")
+
+local root = "/cvmfs/soft.computecanada.ca/gentoo/2020"
+
+prepend_path("PATH", pathJoin(root, "bin"))
+prepend_path("PATH", pathJoin(root, "sbin"))
+prepend_path("PATH", pathJoin(root, "usr/bin"))
+prepend_path("PATH", pathJoin(root, "usr/sbin"))
+prepend_path("PATH", "/cvmfs/soft.computecanada.ca/custom/bin")
+prepend_path("INFOPATH", pathJoin(root, "usr/share/binutils-data/x86_64-pc-linux-gnu/2.33.1/info:"))
+prepend_path("MANPATH", pathJoin(root, "usr/share/man"))
+prepend_path("MANPATH", pathJoin(root, "usr/share/binutils-data/x86_64-pc-linux-gnu/2.33.1/man"))
+prepend_path("MANPATH", pathJoin(root, "usr/share/gcc-data/x86_64-pc-linux-gnu/9.3.0/man"))
+prepend_path("PYTHONPATH", "/cvmfs/soft.computecanada.ca/custom/python/site-packages")
+local posix = require "posix"
+-- RedHat based systems
+if posix.stat("/etc/pki/tls/certs/","type") == "directory" then
+	setenv("SSL_CERT_FILE", "/etc/pki/tls/certs/ca-bundle.crt")
+	setenv("CURL_CA_BUNDLE", "/etc/pki/tls/certs/ca-bundle.crt")
+-- Debian based systems
+elseif posix.stat("/etc/ssl/certs/","type") == "directory" then
+	setenv("SSL_CERT_FILE", "/etc/ssl/certs/ca-certificates.crt")
+	setenv("CURL_CA_BUNDLE", "/etc/ssl/certs/ca-certificates.crt")
+end
+
+pushenv("PAGER", "less -R")
+pushenv("LESSOPEN", "|lesspipe %s")
+if os.getenv("XDG_DATA_DIRS") then
+	prepend_path("XDG_DATA_DIRS", pathJoin(root, "usr/share"))
+else
+	setenv("XDG_DATA_DIRS", pathJoin(root, "usr/share") .. ":/usr/local/share:/usr/share")
+end
+if os.getenv("XDG_CONFIG_DIRS") then
+	prepend_path("XDG_CONFIG_DIRS", pathJoin(root, "etc/xdg"))
+else
+	setenv("XDG_CONFIG_DIRS", pathJoin(root, "etc/xdg") .. ":/etc/xdg")
+end
+
+require("os")
+-- Define RSNT variables
+-- do something only at load time, if not already defined. Otherwise, unloading the module will lose the predefined value if there is one
+if mode() == "load" then
+	setenv("RSNT_ARCH", arch)
+end
+if mode() == "load" then
+	setenv("RSNT_INTERCONNECT", interconnect)
+end
+
+-- let pip use our wheel house
+if arch == "avx512" then
+        setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-avx512-gentoo.conf")
+elseif arch == "avx2" then
+        setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-avx2-gentoo.conf")
+elseif arch == "avx" then
+        setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-avx-gentoo.conf")
+else
+        setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-gentoo.conf")
+end
+
+-- also make easybuild and easybuild-generated modules accessible
+prepend_path("PATH", "/cvmfs/soft.computecanada.ca/easybuild/bin")
+setenv("EASYBUILD_CONFIGFILES", "/cvmfs/soft.computecanada.ca/easybuild/config.cfg")
+setenv("EASYBUILD_BUILDPATH", pathJoin("/tmp", os.getenv("USER")))
+
+-- EPREFIX is the root but use EBROOTGENTOO as $EPREFIX/usr so it can be used instead of
+-- EBROOTSOMETHINGELSE without modification.
+setenv("EPREFIX", root)
+setenv("EBROOTGENTOO", pathJoin(root, "/usr"))
+setenv("EBVERSIONGENTOO", "2020")
+
+if (mode() ~= "spider") then -- for now
+if generic_gentoo then
+	prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2020/Core")
+	prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca/easybuild/modules/2020", arch, "Core"))
+else
+	prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2020/Core-" .. arch)
+end
+end
+
+local user = os.getenv("USER","unknown")
+local home = os.getenv("HOME",pathJoin("/home",user))
+if user ~= "ebuser" then
+    prepend_path("MODULEPATH", pathJoin(home, ".local/easybuild/modules/2020/Core"))
+    prepend_path("MODULEPATH", pathJoin(home, ".local/easybuild/modules/2020", arch, "Core"))
+end
+
