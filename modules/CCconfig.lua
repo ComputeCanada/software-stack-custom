@@ -75,5 +75,6 @@ if not os.getenv("SCRATCH") then
 --	end
 end
 
+prepend_path("PATH", "/cvmfs/soft.computecanada.ca/custom/bin/computecanada")
 
 end
