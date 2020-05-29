@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# https://unix.stackexchange.com/questions/202243/how-to-check-directory-is-empty
+function emptydir {   
+ [ "$(shopt -s nullglob; echo "$1"/{,.[^.],..?}*)" = "" ]
+}
+
+if [ -z "$SCREENDIR" ]; then
+	NIX_SCREENDIR=/tmp/uscreens/S-$USER
+	if [[ -d $NIX_SCREENDIR ]]; then
+		if ! emptydir $NIX_SCREENDIR; then
+			export SCREENDIR=$NIX_SCREENDIR
+		fi
+	fi
+fi
+${EBROOTGENTOO-$NIXUSER_PROFILE}/bin/screen ${1+"$@"}
