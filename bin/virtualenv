@@ -1,3 +1,6 @@
 #!/bin/sh
+if [ -n "$EBROOTGENTOO" ]; then
+	exec /cvmfs/soft.computecanada.ca/gentoo/2019/usr/bin/virtualenv ${1+"$@"}
+fi
 module load python/2.7.14
-virtualenv ${1+"$@"}
+exec virtualenv ${1+"$@"}
