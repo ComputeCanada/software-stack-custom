@@ -1,7 +1,5 @@
 add_property(   "lmod", "sticky")
 
-local root = "/cvmfs/soft.computecanada.ca/nix/var/nix/profiles/16.09"
-
 require("os")
 load("CCconfig")
 load("gentoo/2020")
