@@ -1,1 +1,1 @@
-$NIXUSER_PROFILE/bin/install --mode=u+rwx,go+rx,uo-s "$@"
+${EBROOTGENTOO-NIXUSER_PROFILE}/bin/install --mode=u+rwx,go+rx,uo-s "$@"
