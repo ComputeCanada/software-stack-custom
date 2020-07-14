@@ -1,0 +1,56 @@
+diff -ur lua-5.1.4.9.orig/luaposix/lposix.c lua-5.1.4.9/luaposix/lposix.c
+--- lua-5.1.4.9.orig/luaposix/lposix.c	2017-01-20 20:24:52.000000000 +0000
++++ lua-5.1.4.9/luaposix/lposix.c	2020-05-05 23:44:29.603009847 +0000
+@@ -1026,6 +1026,7 @@
+ }
+ #endif
+ 
++#if 0
+ /*
+  * XXX: GNU and BSD handle the forward declaration of crypt() in different
+  * and annoying ways (especially GNU). Declare it here just to make sure
+@@ -1048,6 +1049,7 @@
+ 
+ 	return 1;
+ }
++#endif
+ 
+ /*	Like POSIX's setrlimit()/getrlimit() API functions.
+  *
+@@ -1208,7 +1210,8 @@
+ 	return 1;
+ }
+ 
+-#ifndef DARWIN
++#if 0
++//#ifndef DARWIN
+ static int get_clk_id_const(const char *str)
+ {
+           
+@@ -1300,11 +1303,13 @@
+ 	{"chdir",		Pchdir},
+ 	{"chmod",		Pchmod},
+ 	{"chown",		Pchown},
++#if 0
+ #ifndef DARWIN
+ 	{"clock_getres",	Pclock_getres},
+ 	{"clock_gettime",	Pclock_gettime},
+ #endif
+ 	{"crypt",		Pcrypt},
++#endif
+ 	{"ctermid",		Pctermid},
+ 	{"dirname",		Pdirname},
+ 	{"dir",			Pdir},
+diff -ur lua-5.1.4.9.orig/luaposix/Makefile lua-5.1.4.9/luaposix/Makefile
+--- lua-5.1.4.9.orig/luaposix/Makefile	2017-01-20 20:24:52.000000000 +0000
++++ lua-5.1.4.9/luaposix/Makefile	2020-05-05 23:19:16.832248658 +0000
+@@ -41,7 +41,8 @@
+   LIBS=
+ else
+   LDFLAGS_SHARED=-shared
+-  LIBS=-lcrypt -lrt
++  LIBS=
++  #-lcrypt -lrt
+ endif
+ 
+ # targets

@@ -16,3 +16,4 @@ if not cuda_driver_version or cuda_driver_version == "" then
 end
 
 assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/nixpkgs/16.09.lua.core"))(arch, interconnect, cuda_driver_version, generic_nixpkgs)
+assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/CCconfig.lua"))()
