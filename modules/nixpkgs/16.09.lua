@@ -18,8 +18,12 @@ if not interconnect or interconnect == "" then
 		interconnect = get_interconnect()
 	end
 end
+local cuda_driver_version = os.getenv("RSNT_CUDA_DRIVER_VERSION") or ""
+if not cuda_driver_version or cuda_driver_version == "" then
+	cuda_driver_version = get_installed_cuda_driver_version()
+end
 local generic_nixpkgs = true
 
-assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/nixpkgs/16.09.lua.core"))(arch, interconnect, generic_nixpkgs)
+assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/nixpkgs/16.09.lua.core"))(arch, interconnect,cuda_driver_version, generic_nixpkgs)
 assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/CCconfig.lua"))()
 

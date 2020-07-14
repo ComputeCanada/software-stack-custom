@@ -1,4 +1,4 @@
-local arch, interconnect, generic_nixpkgs=...
+local arch, interconnect, cuda_driver_version, generic_nixpkgs=...
 
 help([[Nixpkgs is a collection of packages for the Nix package manager - Homepage: https://github.com/NixOS/nixpkgs]])
 whatis("Description: Nixpkgs is a collection of packages for the Nix package manager - Homepage: https://github.com/NixOS/nixpkgs")
@@ -54,9 +54,8 @@ require("os")
 -- do something only at load time, if not already defined. Otherwise, unloading the module will lose the predefined value if there is one
 if mode() == "load" then
 	setenv("RSNT_ARCH", arch)
-end
-if mode() == "load" then
 	setenv("RSNT_INTERCONNECT", interconnect)
+	setenv("RSNT_CUDA_DRIVER_VERSION", cuda_driver_version)
 end
 
 -- let pip use our wheel house

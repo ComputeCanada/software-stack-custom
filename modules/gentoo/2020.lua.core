@@ -1,4 +1,4 @@
-local arch, interconnect, generic_gentoo=...
+local arch, interconnect, cuda_driver_version, generic_gentoo=...
 
 help([[Gentoo prefix is Gentoo Linux installed in a prefix - Homepage: https://wiki.gentoo.org/wiki/Project:Prefix]])
 whatis("Gentoo prefix is Gentoo Linux installed in a prefix - Homepage: https://wiki.gentoo.org/wiki/Project:Prefix")
@@ -46,9 +46,8 @@ require("os")
 -- do something only at load time, if not already defined. Otherwise, unloading the module will lose the predefined value if there is one
 if mode() == "load" then
 	setenv("RSNT_ARCH", arch)
-end
-if mode() == "load" then
 	setenv("RSNT_INTERCONNECT", interconnect)
+	setenv("RSNT_CUDA_DRIVER_VERSION", cuda_driver_version)
 end
 
 -- let pip use our wheel house
