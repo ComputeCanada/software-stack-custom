@@ -9,6 +9,10 @@ REPORT_USER_QUOTA_ON_PROJECT=0
 if [[ "$CC_CLUSTER" == "cedar" || "$CC_CLUSTER" == "graham" || "$CC_CLUSTER" == "beluga" ]]; then
 	REPORT_USER_QUOTA_ON_PROJECT=1
 fi
+PROJECT_AND_NEARLINE_SAME_FS=0
+if [[ "$CC_CLUSTER" == "graham" || "$CC_CLUSTER" == "beluga" ]]; then
+	PROJECT_AND_NEARLINE_SAME_FS=1
+fi
 QUOTA_IN_FILES=0
 if [[ "$CC_CLUSTER" == "siku" ]]; then
 	QUOTA_IN_FILES=1
@@ -179,9 +183,11 @@ function find_and_report_usage {
 }
 printf "%40s %20s %20s\n" "Description" "Space" "# of files"
 find_and_report_usage $USER "/home"
+
 if [[ -d "/scratch" ]]; then
 	find_and_report_usage $USER "/scratch" 
 fi
+
 if [[ -d "/project" ]]; then
 	if [[ "$REPORT_USER_QUOTA_ON_PROJECT" == "1" ]]; then
 		find_and_report_usage $USER /project
@@ -190,8 +196,14 @@ if [[ -d "/project" ]]; then
 		find_and_report_usage $p /project
 	done
 fi
+
 if [[ -d "/nearline" ]]; then
-	for p in $(get_projects "nearline"); do
-		find_and_report_usage $p /nearline
-	done
+	if [[ "$PROJECT_AND_NEARLINE_SAME_FS" == "1" ]]; then
+		echo "/nearline is part of the /project filesystem on this cluster"
+		echo "/nearline fait partie du système de fichiers /project sur ce grappe"
+	else
+		for p in $(get_projects "nearline"); do
+			find_and_report_usage $p /nearline
+		done
+	fi
 fi
