@@ -190,8 +190,8 @@ if [[ -d "/project" ]]; then
 		find_and_report_usage $p /project
 	done
 fi
-if [[ -d "/nearline" ]]; then
-	for p in $(get_projects "nearline"); do
-		find_and_report_usage $p /nearline
-	done
-fi
+#if [[ -d "/nearline" ]]; then
+#	for p in $(get_projects "nearline"); do
+#		find_and_report_usage $p /nearline
+#	done
+#fi
