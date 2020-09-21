@@ -2,10 +2,10 @@ add_property(   "lmod", "sticky")
 
 require("os")
 load("CCconfig")
-load("gentoo/2020")
+local arch = "avx"
+pushenv("RSNT_ARCH", arch)
 
--- set by gentoo/2020 module
-local arch = os.getenv("RSNT_ARCH")
+load("gentoo/2020")
 
 prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2020/Core")
 prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca/easybuild/modules/2020", arch, "Core"))

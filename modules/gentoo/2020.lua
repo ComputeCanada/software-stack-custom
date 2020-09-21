@@ -18,11 +18,10 @@ if not interconnect or interconnect == "" then
 		interconnect = get_interconnect()
 	end
 end
-local generic_gentoo = true
 local cuda_driver_version = os.getenv("RSNT_CUDA_DRIVER_VERSION") or ""
 if not cuda_driver_version or cuda_driver_version == "" then
 	cuda_driver_version = get_installed_cuda_driver_version()
 end
 
-assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/gentoo/2020.lua.core"))(arch, interconnect, cuda_driver_version, generic_gentoo)
+assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/gentoo/2020.lua.core"))(arch, interconnect, cuda_driver_version)
 

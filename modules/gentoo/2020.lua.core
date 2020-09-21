@@ -1,4 +1,4 @@
-local arch, interconnect, cuda_driver_version, generic_gentoo=...
+local arch, interconnect, cuda_driver_version=...
 
 help([[Gentoo prefix is Gentoo Linux installed in a prefix - Homepage: https://wiki.gentoo.org/wiki/Project:Prefix]])
 whatis("Gentoo prefix is Gentoo Linux installed in a prefix - Homepage: https://wiki.gentoo.org/wiki/Project:Prefix")
@@ -71,20 +71,3 @@ setenv("EASYBUILD_BUILDPATH", pathJoin("/tmp", os.getenv("USER")))
 setenv("EPREFIX", root)
 setenv("EBROOTGENTOO", pathJoin(root, "/usr"))
 setenv("EBVERSIONGENTOO", "2020")
-
-if (mode() ~= "spider") then -- for now
-if generic_gentoo then
-	prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2020/Core")
-	prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca/easybuild/modules/2020", arch, "Core"))
-else
-	prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2020/Core-" .. arch)
-end
-end
-
-local user = os.getenv("USER","unknown")
-local home = os.getenv("HOME",pathJoin("/home",user))
-if user ~= "ebuser" then
-    prepend_path("MODULEPATH", pathJoin(home, ".local/easybuild/modules/2020/Core"))
-    prepend_path("MODULEPATH", pathJoin(home, ".local/easybuild/modules/2020", arch, "Core"))
-end
-
