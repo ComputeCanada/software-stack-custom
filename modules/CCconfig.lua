@@ -6,7 +6,7 @@ if not os.getenv("RSNT_NO_CCCONFIG") then
 --------------------------------------------------------------------------------------------------------
 -- if SQUEUE_FORMAT is not already defined, define it
 if not os.getenv("SQUEUE_FORMAT") then
-	setenv("SQUEUE_FORMAT","%.15i %.8u %.12a %.14j %.3t %.10L %.5D %.4C %.10b %.7m %N (%r) ")
+	setenv("SQUEUE_FORMAT","%.15i %.8u %.16a %.14j %.3t %.10L %.5D %.4C %.10b %.7m %N (%r) ")
 end
 
 -- if SQUEUE_SORT is not already defined, define it
