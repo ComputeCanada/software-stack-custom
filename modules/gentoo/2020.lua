@@ -24,4 +24,5 @@ if not cuda_driver_version or cuda_driver_version == "" then
 end
 
 assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/gentoo/2020.lua.core"))(arch, interconnect, cuda_driver_version)
-
+conflict("StdEnv/2016.4")
+conflict("StdEnv/2018.3")
