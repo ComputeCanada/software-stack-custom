@@ -195,3 +195,27 @@ fi
 #		find_and_report_usage $p /nearline
 #	done
 #fi
+
+declare -a breakdowns
+for fs in project nearline; do
+	db="/${fs}/.duc_databases/${p}.sqlite"
+	for p in $(get_projects "projects"); do
+		if [[ -f "$db" ]]; then
+			breakdowns+=("diskusage_breakdown /${fs}/${p} \t (Last update: $(stat --format "%y" $db | awk -F '.' '{print $1}'))")
+		fi
+	done
+done
+
+for fs in home scratch; do
+	if [[ -f "/${fs}/.duc_databases/${USER}.sqlite" ]]; then
+		breakdowns+=("diskusage_breakdown /${fs}/${USER} \t (Last update: $(stat --format "%y" /${fs}/.duc_databases/${USER}.sqlite | awk -F '.' '{print $1}'))")
+	fi
+done
+
+if (( ${#breakdowns[@]} )); then
+	printf "\nDetailed breakdowns are available with the following commands:\n"
+	for value in "${breakdowns[@]}"
+	do
+		printf "$value\n"
+	done
+fi
