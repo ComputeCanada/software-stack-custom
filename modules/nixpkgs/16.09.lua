@@ -26,4 +26,4 @@ local generic_nixpkgs = true
 
 assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/nixpkgs/16.09.lua.core"))(arch, interconnect,cuda_driver_version, generic_nixpkgs)
 assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/CCconfig.lua"))()
-
+conflict("StdEnv/2020")
