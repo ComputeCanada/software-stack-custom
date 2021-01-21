@@ -4,3 +4,5 @@ software
 *.pyc
 reframe
 *.tar.*
+clusterstats
+bin/computecanada/clusterstats
