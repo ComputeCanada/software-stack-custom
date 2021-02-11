@@ -189,12 +189,28 @@ if [[ -d "/project" ]]; then
 	for p in $(get_projects "projects"); do
 		find_and_report_usage $p /project
 	done
+
+        for p in $(get_projects "projects"); do
+                if [[ -f "/project/.stats/${p}.json" ]]; then
+			lastupdate=$(stat --format "%y" /project/.stats/${p}.json | awk -F '.' '{print $1}')
+			echo
+			echo "Breakdown for project $p (Last update: $lastupdate)"
+			python3 diskusage_rbh.py project $p
+			echo
+		fi
+        done
 fi
-#if [[ -d "/nearline" ]]; then
-#	for p in $(get_projects "nearline"); do
-#		find_and_report_usage $p /nearline
-#	done
-#fi
+if [[ -d "/nearline" ]]; then
+	for p in $(get_projects "nearline"); do
+                if [[ -f "/nearline/.stats/${p}.json" ]]; then
+                        lastupdate=$(stat --format "%y" /nearline/.stats/${p}.json | awk -F '.' '{print $1}')
+                        echo
+                        echo "Breakdown for nearline $p (Last update: $lastupdate)"
+                        python3 diskusage_rbh.py nearline $p
+                        echo
+                fi
+	done
+fi
 
 declare -a breakdowns
 for fs in project nearline; do
