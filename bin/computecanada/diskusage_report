@@ -5,6 +5,50 @@ if [[ $# -ge 1 ]]; then
 	VERBOSITY=$1
 fi
 
+function print_usage {
+	echo "Usage: $0 [--home] [--scratch] [--project] [--nearline] [--per_user] [--all_users] [--help]"
+	echo ""
+	echo "  --home         Display information for the home filesystem"
+	echo "  --scratch      Display information for the scratch filesystem"
+	echo "  --project      Display information for the project filesystem"
+	echo "  --nearline     Display information for the nearline filesystem"
+	echo "  --per_user     Display per-user breakdown if available"
+	echo "  --all_users    Display information for all users of the project"
+	echo "  --help         Display this help"
+}
+
+TEMP=$(getopt -o h --longoptions help,per_user,home,scratch,project,nearline,all_users -n $0 -- "$@")
+eval set -- "$TEMP"
+
+ARG_PER_USER=0
+ARG_ALL=1
+ARG_HOME=0
+ARG_SCRATCH=0
+ARG_PROJECT=0
+ARG_NEARLINE=0
+ARG_ALL_USERS=""
+while true; do
+	case "$1" in
+		--per_user)
+			ARG_PER_USER=1; shift ;;
+		--home)
+			ARG_ALL=0; ARG_HOME=1; shift ;;
+		--scratch)
+			ARG_ALL=0; ARG_SCRATCH=1; shift ;;
+		--project)
+			ARG_ALL=0; ARG_PROJECT=1; shift ;;
+		--nearline)
+			ARG_ALL=0; ARG_NEARLINE=1; shift ;;
+		--all_users)
+			ARG_ALL_USERS="--all_users"; shift ;;
+		-h|--help)
+			print_usage; exit 0 ;;
+		--) shift; break ;;
+		*) echo "Unknown parameter $1"; print_usage; exit 1 ;;
+	esac
+done
+
+
 REPORT_USER_QUOTA_ON_PROJECT=0
 if [[ "$CC_CLUSTER" == "cedar" || "$CC_CLUSTER" == "graham" || "$CC_CLUSTER" == "beluga" ]]; then
 	REPORT_USER_QUOTA_ON_PROJECT=1
@@ -177,56 +221,73 @@ function find_and_report_usage {
 		fi
 	fi
 }
-printf "%40s %20s %20s\n" "Description" "Space" "# of files"
-find_and_report_usage $USER "/home"
-if [[ -d "/scratch" ]]; then
-	find_and_report_usage $USER "/scratch" 
-fi
-if [[ -d "/project" ]]; then
-	if [[ "$REPORT_USER_QUOTA_ON_PROJECT" == "1" ]]; then
-		find_and_report_usage $USER /project
-	fi
-	for p in $(get_projects "projects"); do
-		find_and_report_usage $p /project
-	done
-
-        for p in $(get_projects "projects"); do
-                if [[ -f "/project/.stats/${p}.json" ]]; then
-			lastupdate=$(stat --format "%y" /project/.stats/${p}.json | awk -F '.' '{print $1}')
-			echo
-			echo "Breakdown for project $p (Last update: $lastupdate)"
-			diskusage_rbh project $p
-			echo
-		fi
-        done
-fi
-if [[ -d "/nearline" ]]; then
-	for p in $(get_projects "nearline"); do
-                if [[ -f "/nearline/.stats/${p}.json" ]]; then
-                        lastupdate=$(stat --format "%y" /nearline/.stats/${p}.json | awk -F '.' '{print $1}')
-                        echo
-                        echo "Breakdown for nearline $p (Last update: $lastupdate)"
-                        diskusage_rbh nearline $p
-                        echo
-                fi
-	done
-fi
 
 declare -a breakdowns
-for fs in project nearline; do
-	db="/${fs}/.duc_databases/${p}.sqlite"
-	for p in $(get_projects "projects"); do
-		if [[ -f "$db" ]]; then
-			breakdowns+=("diskusage_breakdown /${fs}/${p} \t (Last update: $(stat --format "%y" $db | awk -F '.' '{print $1}'))")
-		fi
-	done
-done
-
-for fs in home scratch; do
+printf "%40s %20s %20s\n" "Description" "Space" "# of files"
+if [[ "$ARG_ALL" == 1 || "$ARG_HOME" == 1 ]]; then
+	find_and_report_usage $USER "/home"
+	fs="home"
 	if [[ -f "/${fs}/.duc_databases/${USER}.sqlite" ]]; then
 		breakdowns+=("diskusage_breakdown /${fs}/${USER} \t (Last update: $(stat --format "%y" /${fs}/.duc_databases/${USER}.sqlite | awk -F '.' '{print $1}'))")
 	fi
-done
+fi
+
+if [[ "$ARG_ALL" == 1 || "$ARG_SCRATCH" == 1 ]]; then
+	if [[ -d "/scratch" ]]; then
+		find_and_report_usage $USER "/scratch" 
+	fi
+	fs="scratch"
+	if [[ -f "/${fs}/.duc_databases/${USER}.sqlite" ]]; then
+		breakdowns+=("diskusage_breakdown /${fs}/${USER} \t (Last update: $(stat --format "%y" /${fs}/.duc_databases/${USER}.sqlite | awk -F '.' '{print $1}'))")
+	fi
+fi
+if [[ "$ARG_ALL" == 1 || "$ARG_PROJECT" == 1 ]]; then
+	if [[ -d "/project" ]]; then
+		if [[ "$REPORT_USER_QUOTA_ON_PROJECT" == "1" ]]; then
+			find_and_report_usage $USER /project
+		fi
+		for p in $(get_projects "projects"); do
+			find_and_report_usage $p /project
+		done
+	
+		for p in $(get_projects "projects"); do
+			fs="project"
+			db="/${fs}/.duc_databases/${p}.sqlite"
+			if [[ -f "$db" ]]; then
+				breakdowns+=("diskusage_breakdown /${fs}/${p} \t (Last update: $(stat --format "%y" $db | awk -F '.' '{print $1}'))")
+			fi
+			if [[ "$ARG_PER_USER" == "1" ]]; then
+		                if [[ -f "/project/.stats/${p}.json" ]]; then
+					lastupdate=$(stat --format "%y" /project/.stats/${p}.json | awk -F '.' '{print $1}')
+					echo
+					echo "Breakdown for project $p (Last update: $lastupdate)"
+					diskusage_rbh project $p $ARG_ALL_USERS
+					echo
+				fi
+			fi
+		done
+	fi
+fi
+if [[ "$ARG_ALL" == 1 || "$ARG_NEARLINE" == 1 ]]; then
+	if [[ -d "/nearline" ]]; then
+		for p in $(get_projects "nearline"); do
+			fs="nearline"
+			db="/${fs}/.duc_databases/${p}.sqlite"
+			if [[ -f "$db" ]]; then
+				breakdowns+=("diskusage_breakdown /${fs}/${p} \t (Last update: $(stat --format "%y" $db | awk -F '.' '{print $1}'))")
+			fi
+			if [[ "$ARG_PER_USER" == 1 ]]; then
+				if [[ -f "/nearline/.stats/${p}.json" ]]; then
+		                        lastupdate=$(stat --format "%y" /nearline/.stats/${p}.json | awk -F '.' '{print $1}')
+	        	                echo
+	                	        echo "Breakdown for nearline $p (Last update: $lastupdate)"
+	                        	diskusage_rbh nearline $p $ARG_ALL_USERS
+		                        echo
+				fi
+			fi
+		done
+	fi
+fi
 
 if (( ${#breakdowns[@]} )); then
 	printf "\nDetailed breakdowns are available with the following commands:\n"
@@ -234,4 +295,10 @@ if (( ${#breakdowns[@]} )); then
 	do
 		printf "$value\n"
 	done
+fi
+
+if [[ "$ARG_ALL" == 1 || "$ARG_NEARLINE" == 1 || "$ARG_PROJECT" == 1 ]]; then
+	if [[ "$ARG_PER_USER" == 0 ]]; then
+		echo "On some clusters, a break down per user may be available by adding the option '--per_user'."
+	fi
 fi
