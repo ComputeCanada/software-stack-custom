@@ -195,7 +195,7 @@ if [[ -d "/project" ]]; then
 			lastupdate=$(stat --format "%y" /project/.stats/${p}.json | awk -F '.' '{print $1}')
 			echo
 			echo "Breakdown for project $p (Last update: $lastupdate)"
-			python3 diskusage_rbh.py project $p
+			diskusage_rbh project $p
 			echo
 		fi
         done
@@ -206,7 +206,7 @@ if [[ -d "/nearline" ]]; then
                         lastupdate=$(stat --format "%y" /nearline/.stats/${p}.json | awk -F '.' '{print $1}')
                         echo
                         echo "Breakdown for nearline $p (Last update: $lastupdate)"
-                        python3 diskusage_rbh.py nearline $p
+                        diskusage_rbh nearline $p
                         echo
                 fi
 	done
