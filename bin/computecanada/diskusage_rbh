@@ -38,6 +38,9 @@ if __name__ == '__main__':
             else:
                 size = line['volume']
 
+            # skip uid root
+            if line['uid'] == "root": continue
+
             if args.all_users or line['count'] > MIN_INODES or size > MIN_SIZE:
                 print(LINE_FORMAT.format(
                     line['uid'],
