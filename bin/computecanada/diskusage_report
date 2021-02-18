@@ -301,6 +301,7 @@ fi
 
 if [[ "$ARG_ALL" == 1 || "$ARG_NEARLINE" == 1 || "$ARG_PROJECT" == 1 ]]; then
 	if [[ "$ARG_PER_USER" == 0 ]]; then
+		echo "--"
 		echo "On some clusters, a break down per user may be available by adding the option '--per_user'."
 	fi
 fi
