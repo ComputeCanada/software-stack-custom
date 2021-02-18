@@ -40,7 +40,9 @@ while true; do
 		--nearline)
 			ARG_ALL=0; ARG_NEARLINE=1; shift ;;
 		--all_users)
-			ARG_ALL_USERS="--all_users"; shift ;;
+			ARG_ALL_USERS="--all_users"; 
+			ARG_PER_USER=1;
+			shift ;;
 		-h|--help)
 			print_usage; exit 0 ;;
 		--) shift; break ;;
