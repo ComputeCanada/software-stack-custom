@@ -1,0 +1,12 @@
+#!/bin/bash
+if [[ "$#" -ne 1 ]]; then
+	echo "Please provide an argument."
+	exit 1
+fi
+
+cmd=$1
+fs=$(echo $cmd | awk -F "/" '{print $2}')
+p=$(echo $cmd | awk -F "/" '{print $3}')
+db="/${fs}/.duc_databases/${p}.sqlite"
+
+duc ui --database=/${db} $cmd

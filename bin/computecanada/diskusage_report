@@ -230,7 +230,7 @@ if [[ "$ARG_ALL" == 1 || "$ARG_HOME" == 1 ]]; then
 	find_and_report_usage $USER "/home"
 	fs="home"
 	if [[ -f "/${fs}/.duc_databases/${USER}.sqlite" ]]; then
-		breakdowns+=("diskusage_breakdown /${fs}/${USER} \t (Last update: $(stat --format "%y" /${fs}/.duc_databases/${USER}.sqlite | awk -F '.' '{print $1}'))")
+		breakdowns+=("diskusage_explorer /${fs}/${USER} \t (Last update: $(stat --format "%y" /${fs}/.duc_databases/${USER}.sqlite | awk -F '.' '{print $1}'))")
 	fi
 fi
 
@@ -240,7 +240,7 @@ if [[ "$ARG_ALL" == 1 || "$ARG_SCRATCH" == 1 ]]; then
 	fi
 	fs="scratch"
 	if [[ -f "/${fs}/.duc_databases/${USER}.sqlite" ]]; then
-		breakdowns+=("diskusage_breakdown /${fs}/${USER} \t (Last update: $(stat --format "%y" /${fs}/.duc_databases/${USER}.sqlite | awk -F '.' '{print $1}'))")
+		breakdowns+=("diskusage_explorer /${fs}/${USER} \t (Last update: $(stat --format "%y" /${fs}/.duc_databases/${USER}.sqlite | awk -F '.' '{print $1}'))")
 	fi
 fi
 if [[ "$ARG_ALL" == 1 || "$ARG_PROJECT" == 1 ]]; then
@@ -256,7 +256,7 @@ if [[ "$ARG_ALL" == 1 || "$ARG_PROJECT" == 1 ]]; then
 			fs="project"
 			db="/${fs}/.duc_databases/${p}.sqlite"
 			if [[ -f "$db" ]]; then
-				breakdowns+=("diskusage_breakdown /${fs}/${p} \t (Last update: $(stat --format "%y" $db | awk -F '.' '{print $1}'))")
+				breakdowns+=("diskusage_explorer /${fs}/${p} \t (Last update: $(stat --format "%y" $db | awk -F '.' '{print $1}'))")
 			fi
 			if [[ "$ARG_PER_USER" == "1" ]]; then
 		                if [[ -f "/project/.stats/${p}.json" ]]; then
@@ -276,7 +276,7 @@ if [[ "$ARG_ALL" == 1 || "$ARG_NEARLINE" == 1 ]]; then
 			fs="nearline"
 			db="/${fs}/.duc_databases/${p}.sqlite"
 			if [[ -f "$db" ]]; then
-				breakdowns+=("diskusage_breakdown /${fs}/${p} \t (Last update: $(stat --format "%y" $db | awk -F '.' '{print $1}'))")
+				breakdowns+=("diskusage_explorer /${fs}/${p} \t (Last update: $(stat --format "%y" $db | awk -F '.' '{print $1}'))")
 			fi
 			if [[ "$ARG_PER_USER" == 1 ]]; then
 				if [[ -f "/nearline/.stats/${p}.json" ]]; then
@@ -292,7 +292,7 @@ if [[ "$ARG_ALL" == 1 || "$ARG_NEARLINE" == 1 ]]; then
 fi
 
 if (( ${#breakdowns[@]} )); then
-	printf "\nDetailed breakdowns are available with the following commands:\n"
+	printf "\nDisk usage can be explored using the following commands:\n"
 	for value in "${breakdowns[@]}"
 	do
 		printf "$value\n"
