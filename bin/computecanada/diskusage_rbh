@@ -6,6 +6,8 @@ def size_gib(nb_bytes):
     """Convert bytes to a human readable GiB value"""
     return '{:.2f} GiB'.format(nb_bytes/1024/1024/1024)
 
+MIN_INODES=100000         # show 100 000 files or more
+MIN_SIZE=1024*1024*1024   # show 1 GB or more
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Show the quota information based on the json stats file'
@@ -14,9 +16,9 @@ if __name__ == '__main__':
     parser.add_argument('fs', type=str, help='Filesystem',
         choices=['project', 'nearline'])
     parser.add_argument('group', type=str, help='Group name')
+    parser.add_argument('--all_users', action='store_true', help='Display all users')
 
     args = parser.parse_args()
-
     with open('/{}/.stats/{}.json'.format(args.fs, args.group), 'r') as f:
         data = json.load(f)
         if args.fs == 'project':
@@ -36,11 +38,15 @@ if __name__ == '__main__':
             else:
                 size = line['volume']
 
-            print(LINE_FORMAT.format(
-                line['uid'],
-                line['count'],
-                size_gib(size),
-                line['location']))
+            # skip uid root
+            if line['uid'] == "root": continue
+
+            if args.all_users or line['count'] > MIN_INODES or size > MIN_SIZE:
+                print(LINE_FORMAT.format(
+                    line['uid'],
+                    line['count'],
+                    size_gib(size),
+                    line['location']))
             if line['location'] in total_size:
                 total_size[line['location']] += size
             else:
@@ -53,7 +59,9 @@ if __name__ == '__main__':
 
         for key in total_size:
             print(LINE_FORMAT.format(
-            'Total',
-            total_count[key],
-            size_gib(total_size[key]),
-            key))
+                'Total',
+                total_count[key],
+                size_gib(total_size[key]),
+                key))
+        if not args.all_users:
+            print("Only heavy users are displayed. Add '--all_users' to see all of them.")
