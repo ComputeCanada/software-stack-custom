@@ -52,7 +52,7 @@ done
 
 
 REPORT_USER_QUOTA_ON_PROJECT=0
-if [[ "$CC_CLUSTER" == "cedar" || "$CC_CLUSTER" == "graham" || "$CC_CLUSTER" == "beluga" ]]; then
+if [[ "$CC_CLUSTER" == "cedar" || "$CC_CLUSTER" == "graham" || "$CC_CLUSTER" == "beluga" || "$CC_CLUSTER" == "siku" ]]; then
 	REPORT_USER_QUOTA_ON_PROJECT=1
 fi
 QUOTA_IN_FILES=0
