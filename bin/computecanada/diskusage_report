@@ -105,7 +105,7 @@ function get_quota_info_from_files {
 	if [[ -f $quota_file ]]; then
 		# returns 9 values. time, space usage, space soft quota, space hard quota,
 		#   space in doubt, grace period, file usage, file soft quota, file hard quota
-		tail -1 $quota_file | awk '{print $1,$4,$5,$6,$7,$8,$10,$11,$12}' | sed -e 's/\*//g'
+		tail -1 $quota_file | sed 's/ \(days\|hours\?\)/_\1/g' | awk '{print $1,$4,$5,$6,$7,$8,$10,$11,$12}' | sed -e 's/\*//g'
 	else
 		echo "QUOTA_FILE_NOT_FOUND"
 	fi
