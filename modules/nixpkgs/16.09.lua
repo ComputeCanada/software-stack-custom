@@ -24,8 +24,6 @@ if not cuda_driver_version or cuda_driver_version == "" then
 end
 local generic_nixpkgs = true
 
-assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/nixpkgs/16.09.lua.core"))(arch, interconnect,cuda_driver_version, generic_nixpkgs)
-assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/CCconfig.lua"))()
 if(mode() == "load" and isloaded("StdEnv/2020")) then
 	local lang = os.getenv("LANG") or "en"
 	if (string.sub(lang,1,2) == "fr") then
@@ -35,3 +33,6 @@ if(mode() == "load" and isloaded("StdEnv/2020")) then
 	end
 	unload("StdEnv/2020")
 end
+
+assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/nixpkgs/16.09.lua.core"))(arch, interconnect,cuda_driver_version, generic_nixpkgs)
+assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/CCconfig.lua"))()
