@@ -17,6 +17,6 @@ if (mode() == "spider") then
 	end
 end
 
-load("imkl/2020.1.217")
-load("intel/2020.1.217")
-load("openmpi/4.0.3")
+load("imkl")
+load("intel")
+load("openmpi")
