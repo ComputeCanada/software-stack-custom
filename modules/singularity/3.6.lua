@@ -28,7 +28,7 @@ if user then
 	local home = os.getenv("HOME") or pathJoin("/home", user)
 	local default_singularity_cachedir = pathJoin(home, ".singularity")
 	local default_singularity_cachedir_type = posix.stat(default_singularity_cachedir, "type") or nil
-	if default_singularity_cachedir == "directory" or default_singularity_cachedir == "link"  then
+	if default_singularity_cachedir_type == "directory" or default_singularity_cachedir_type == "link"  then
 		setenv("SINGULARITY_CACHEDIR", default_singularity_cachedir)
 	else
 		local singularity_cachedir = pathJoin(scratch, ".singularity")
