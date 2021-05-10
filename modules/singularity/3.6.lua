@@ -22,3 +22,20 @@ else
 	setenv("SINGULARITY_TMPDIR",scratch)
 end
 
+local posix = require "posix"
+local user = os.getenv("USER") or nil
+if user then
+	local home = os.getenv("HOME") or pathJoin("/home", user)
+	local default_singularity_cachedir = pathJoin(home, ".singularity")
+	local default_singularity_cachedir_type = posix.stat(default_singularity_cachedir, "type") or nil
+	if default_singularity_cachedir == "directory" or default_singularity_cachedir == "link"  then
+		setenv("SINGULARITY_CACHEDIR", default_singularity_cachedir)
+	else
+		local singularity_cachedir = pathJoin(scratch, ".singularity")
+		local singularity_cachedir_type = posix.stat(singularity_cachedir, "type") or nil
+		if singularity_cachedir_type == "directory" or singularity_cachedir_type == "link" then
+			setenv("SINGULARITY_CACHEDIR", singularity_cachedir)
+		end
+	end
+end
+
