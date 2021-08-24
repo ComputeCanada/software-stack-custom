@@ -11,7 +11,7 @@ version differences between the source and target systems.
 - Website: http://singularity.lbl.gov/ 
 - CC-Wiki: Singularity ]])
 
-local root = "/opt/software/singularity-3.5"
+local root = "/opt/software/singularity-3.8"
 
 prepend_path("PATH", pathJoin(root, "bin"))
 local slurm_tmpdir = os.getenv("SLURM_TMPDIR") or nil
