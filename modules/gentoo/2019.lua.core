@@ -66,6 +66,7 @@ elseif arch == "avx" then
 else
         setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip.conf")
 end
+setenv("MII_INDEX_FILE", "/cvmfs/soft.computecanada.ca/custom/mii/data/" .. arch)
 
 -- also make easybuild and easybuild-generated modules accessible
 prepend_path("PATH", "/cvmfs/soft.computecanada.ca/easybuild/bin")
