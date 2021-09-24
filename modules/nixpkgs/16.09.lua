@@ -13,7 +13,7 @@ if not arch or arch == "" then
 	end
 end
 if not cpu_vendor_id or cpu_vendor_id == "" then
-	arch = get_cpu_vendor_id()
+	cpu_vendor_id = get_cpu_vendor_id()
 end
 if not interconnect or interconnect == "" then
 	if cc_cluster == "cedar" then
