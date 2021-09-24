@@ -28,7 +28,6 @@ elseif posix.stat("/etc/ssl/certs/","type") == "directory" then
 	setenv("CURL_CA_BUNDLE", "/etc/ssl/certs/ca-certificates.crt")
 end
 
-pushenv("PAGER", "less -R")
 pushenv("LESSOPEN", "|lesspipe %s")
 if os.getenv("XDG_DATA_DIRS") then
 	prepend_path("XDG_DATA_DIRS", pathJoin(root, "usr/share"))
