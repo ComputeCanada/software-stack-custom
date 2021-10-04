@@ -3,6 +3,7 @@ require("SitePackage")
 local cc_cluster = os.getenv("CC_CLUSTER") or "computecanada"
 local arch = os.getenv("RSNT_ARCH") or ""
 local interconnect = os.getenv("RSNT_INTERCONNECT") or ""
+local cpu_vendor_id = os.getenv("RSNT_CPU_VENDOR_ID") or ""
 
 if not arch or arch == "" then
 	if cc_cluster == "cedar" or cc_cluster == "graham" then
@@ -10,6 +11,9 @@ if not arch or arch == "" then
 	else
 		arch = get_highest_supported_architecture()
 	end
+end
+if not cpu_vendor_id or cpu_vendor_id == "" then
+	cpu_vendor_id = get_cpu_vendor_id()
 end
 if not interconnect or interconnect == "" then
 	if cc_cluster == "cedar" then
@@ -34,5 +38,5 @@ if(mode() == "load" and isloaded("StdEnv/2020")) then
 	unload("StdEnv/2020")
 end
 
-assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/nixpkgs/16.09.lua.core"))(arch, interconnect,cuda_driver_version, generic_nixpkgs)
+assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/nixpkgs/16.09.lua.core"))(arch, cpu_vendor_id, interconnect, cuda_driver_version, generic_nixpkgs)
 assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/CCconfig.lua"))()

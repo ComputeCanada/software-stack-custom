@@ -1,4 +1,4 @@
-local arch, interconnect, cuda_driver_version=...
+local arch, vendor_id, interconnect, cuda_driver_version=...
 
 help([[Gentoo prefix is Gentoo Linux installed in a prefix - Homepage: https://wiki.gentoo.org/wiki/Project:Prefix]])
 whatis("Gentoo prefix is Gentoo Linux installed in a prefix - Homepage: https://wiki.gentoo.org/wiki/Project:Prefix")
@@ -47,6 +47,7 @@ if mode() == "load" then
 	setenv("RSNT_ARCH", arch)
 	setenv("RSNT_INTERCONNECT", interconnect)
 	setenv("RSNT_CUDA_DRIVER_VERSION", cuda_driver_version)
+	setenv("RSNT_CPU_VENDOR_ID", vendor_id)
 end
 
 -- let pip use our wheel house
