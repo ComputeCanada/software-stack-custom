@@ -20,3 +20,8 @@ end
 load("imkl")
 load("intel")
 load("openmpi")
+if cpu_vendor_id == "amd" then
+	load("flexiblas")
+	load("blis")
+	setenv("FLEXIBLAS", "blis")
+end
