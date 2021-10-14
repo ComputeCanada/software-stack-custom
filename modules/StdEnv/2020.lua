@@ -20,6 +20,7 @@ end
 load("imkl")
 load("intel")
 load("openmpi")
+local cpu_vendor_id = os.getenv("RSNT_CPU_VENDOR_ID")
 if cpu_vendor_id == "amd" then
 	load("flexiblas")
 	load("blis")
