@@ -79,10 +79,13 @@ setenv("EASYBUILD_BUILDPATH", pathJoin("/tmp", os.getenv("USER")))
 setenv("EBROOTNIXPKGS", root)
 setenv("EBVERSIONNIXPKGS", "16.09")
 
-if generic_nixpkgs then
-	prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2017/Core")
-else
-	prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2017/Core-" .. arch)
+-- do not modify the module path for amd in spider mode, so users don't find it
+if cpu_vendor_id ~= "amd" and (mode() == "load" or mode() == "unload") then
+	if generic_nixpkgs then
+		prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2017/Core")
+	else
+		prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2017/Core-" .. arch)
+	end
 end
 
 local user = os.getenv("USER","unknown")
