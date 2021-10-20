@@ -80,7 +80,7 @@ setenv("EBROOTNIXPKGS", root)
 setenv("EBVERSIONNIXPKGS", "16.09")
 
 -- do not modify the module path for amd in spider mode, so users don't find it
-if cpu_vendor_id ~= "amd" and (mode() == "load" or mode() == "unload") then
+if cpu_vendor_id ~= "amd" or (cpu_vendor_id == "amd" and (mode() == "load" or mode() == "unload")) then
 	if generic_nixpkgs then
 		prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2017/Core")
 	else
