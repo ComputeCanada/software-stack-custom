@@ -1,0 +1,6 @@
+#!/bin/sh
+if [[ "$CC_CLUSTER" == "narval" ]]; then
+	# workaround for Lustre issue on Narval
+	exec ${EBROOTGENTOO-$NIXUSER_PROFILE}/bin/ld.gold --no-mmap-output-file ${1+"$@"}
+fi
+exec ${EBROOTGENTOO-$NIXUSER_PROFILE}/bin/ld.gold ${1+"$@"}
