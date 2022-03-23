@@ -4,8 +4,8 @@ cd /tmp/build-lmod
 CUSTOM=/cvmfs/soft.computecanada.ca/custom
 LUA=/cvmfs/soft.computecanada.ca/custom/software/lua
 TCL=/cvmfs/soft.computecanada.ca/custom/software/tcl
-tar xf $CUSTOM/sources/Lmod-8.6.11.tar.gz
-cd Lmod-8.6.11
+tar xf $CUSTOM/sources/Lmod-8.6.16.tar.gz
+cd Lmod-8.6.16
 export CPATH=$TCL/include
 export LIBRARY_PATH=$TCL/lib
 export PATH=$TCL/bin:$LUA/bin:$PATH
