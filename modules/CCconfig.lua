@@ -37,7 +37,7 @@ end
 if not os.getenv("RSNT_NO_LS_COLORS") then
 	-- do not colour certain attributes of ls
 	-- this avoids inode lookups for plain "ls"
-	append_path("LS_COLORS", "su=00:sg=00:ca=00:ow=00:st=00:tw=00:ex=00:")
+	append_path("LS_COLORS", "su=00:sg=00:ca=00:ow=00:st=00:tw=00:ex=00:or=00:")
 end
 
 --------------------------------------------------------------------------------------------------------
