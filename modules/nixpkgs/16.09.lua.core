@@ -70,6 +70,9 @@ else
         setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip.conf")
 end
 setenv("MII_INDEX_FILE", "/cvmfs/soft.computecanada.ca/custom/mii/data/" .. arch .. "_" .. cpu_vendor_id)
+if os.getenv("RSNT_ENABLE_LMOD_CACHE") == "yes" then
+	append_path("LMOD_RC", "/cvmfs/soft.computecanada.ca/config/lmod/lmodrc/cache_" .. arch .. "_" .. cpu_vendor_id .. ".lua")
+end
 
 -- also make easybuild and easybuild-generated modules accessible
 prepend_path("PATH", "/cvmfs/soft.computecanada.ca/easybuild/bin")
