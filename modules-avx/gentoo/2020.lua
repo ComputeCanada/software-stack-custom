@@ -20,5 +20,4 @@ if not cuda_driver_version or cuda_driver_version == "" then
 	cuda_driver_version = get_installed_cuda_driver_version()
 end
 
-local custom_root = os.getenv("RSNT_CUSTOM_ROOT") or "/cvmfs/soft.computecanada.ca/custom"
-assert(loadfile(custom_root .. "/modules/gentoo/2020.lua.core"))(arch, cpu_vendor_id, interconnect, cuda_driver_version)
+assert(loadfile("/cvmfs/soft.computecanada.ca/custom/modules/gentoo/2020.lua.core"))(arch, cpu_vendor_id, interconnect, cuda_driver_version)
