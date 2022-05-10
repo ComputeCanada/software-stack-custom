@@ -1,4 +1,4 @@
-local arch, vendor_id, interconnect, cuda_driver_version=...
+local arch, cpu_vendor_id, interconnect, cuda_driver_version=...
 
 help([[Gentoo prefix is Gentoo Linux installed in a prefix - Homepage: https://wiki.gentoo.org/wiki/Project:Prefix]])
 whatis("Gentoo prefix is Gentoo Linux installed in a prefix - Homepage: https://wiki.gentoo.org/wiki/Project:Prefix")
@@ -47,7 +47,7 @@ if mode() == "load" then
 	setenv("RSNT_ARCH", arch)
 	setenv("RSNT_INTERCONNECT", interconnect)
 	setenv("RSNT_CUDA_DRIVER_VERSION", cuda_driver_version)
-	setenv("RSNT_CPU_VENDOR_ID", vendor_id)
+	setenv("RSNT_CPU_VENDOR_ID", cpu_vendor_id)
 end
 
 -- let pip use our wheel house
@@ -60,11 +60,11 @@ elseif arch == "avx" then
 else
         setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-gentoo.conf")
 end
-setenv("MII_INDEX_FILE", "/cvmfs/soft.computecanada.ca/custom/mii/data/" .. arch .. "_" .. vendor_id)
+setenv("MII_INDEX_FILE", "/cvmfs/soft.computecanada.ca/custom/mii/data/" .. arch .. "_" .. cpu_vendor_id)
 local user = os.getenv("USER","unknown")
 local home = os.getenv("HOME",pathJoin("/home",user))
 if os.getenv("RSNT_ENABLE_LMOD_CACHE") == "yes" then
-	append_path("LMOD_RC", "/cvmfs/soft.computecanada.ca/config/lmod/lmodrc/cache_" .. arch .. "_" .. vendor_id .. ".lua")
+	append_path("LMOD_RC", "/cvmfs/soft.computecanada.ca/config/lmod/lmodrc/cache_" .. arch .. "_" .. cpu_vendor_id .. ".lua")
 elseif os.getenv("RSNT_ENABLE_LMOD_CACHE") == "auto" and mode() == "load" then
 	local has_local_paths = os.getenv("RSNT_LOCAL_MODULEPATHS") or "no"
 	local has_home_paths = "no"
