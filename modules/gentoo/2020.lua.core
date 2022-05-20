@@ -68,13 +68,8 @@ if mode() == "load" or mode() == "unload" then
 	if os.getenv("RSNT_ENABLE_LMOD_CACHE") == "yes" then
 		append_path("LMOD_RC", "/cvmfs/soft.computecanada.ca/config/lmod/lmodrc/cache_" .. arch .. "_" .. cpu_vendor_id .. ".lua")
 	elseif os.getenv("RSNT_ENABLE_LMOD_CACHE") == "auto" then
-		local has_local_paths = os.getenv("RSNT_LOCAL_MODULEPATHS") or "no"
-		local has_home_paths = "no"
-		if posix.stat(pathJoin(home, ".local/easybuild/modules")) then
-			has_home_paths = "yes"
-		end
-		if has_local_paths == "no" and has_home_paths == "no" then
-			append_path("LMOD_RC", "/cvmfs/soft.computecanada.ca/config/lmod/lmodrc/cache_" .. arch .. "_" .. cpu_vendor_id .. ".lua")
+		if not os.getenv("RSNT_LOCAL_MODULEPATHS") and not posix.stat(pathJoin(home, ".local/easybuild/modules")) then 
+			append_path("LMOD_RC", "/cvmfs/soft.computecanada.ca/config/lmod/lmodrc/cache_" .. arch .. "_" .. cpu_vendor_id .. ".lua") 
 		end
 	end
 end
