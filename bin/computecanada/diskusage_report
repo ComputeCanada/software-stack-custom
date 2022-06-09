@@ -55,6 +55,10 @@ REPORT_USER_QUOTA_ON_PROJECT=0
 if [[ "$CC_CLUSTER" == "cedar" || "$CC_CLUSTER" == "graham" || "$CC_CLUSTER" == "beluga" || "$CC_CLUSTER" == "siku" ]]; then
 	REPORT_USER_QUOTA_ON_PROJECT=1
 fi
+REPORT_NEARLINE_QUOTA=0
+if [[ "$CC_CLUSTER" == "narval" ]]; then
+	REPORT_NEARLINE_QUOTA=1
+fi
 QUOTA_IN_FILES=0
 if [[ "$CC_CLUSTER" == "siku" ]]; then
 	QUOTA_IN_FILES=1
@@ -272,6 +276,11 @@ if [[ "$ARG_ALL" == 1 || "$ARG_PROJECT" == 1 ]]; then
 fi
 if [[ "$ARG_ALL" == 1 || "$ARG_NEARLINE" == 1 ]]; then
 	if [[ -d "/nearline" ]]; then
+		if [[ "$REPORT_NEARLINE_QUOTA" == 1 ]]; then
+	                for p in $(get_projects "nearline"); do
+	                        find_and_report_usage $p /nearline
+	                done
+		fi
 		for p in $(get_projects "nearline"); do
 			fs="nearline"
 			db="/${fs}/.duc_databases/${p}.sqlite"
