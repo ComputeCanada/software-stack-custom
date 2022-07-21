@@ -1,8 +1,10 @@
 anaconda
-python
+python/envs
+python/wheelhouse
 software
-*.pyc
+*.py[co]
 reframe
 *.tar.*
 clusterstats
 bin/computecanada/clusterstats
+__pycache__
