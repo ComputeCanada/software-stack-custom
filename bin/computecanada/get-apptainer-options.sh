@@ -1,1 +1,0 @@
-smart-get-apptainer-options.sh
