@@ -1,24 +1,33 @@
 #!/bin/bash
 
+echo_fr_or_else() {
+  if [[ "$LANG" =~ ^fr_ ]]; then echo "$1"; else echo "$2"; fi
+}
+
+
 if [[ "$#" -lt 1 ]]; then
-  echo "Usage:   $0 parent_directory_in_project_space [--batch [options]]"
-  echo "Syntaxe: $0 répertoire_parent_dans_espace_projet [--batch [options]]"
+  echo_fr_or_else "Syntaxe:" "Usage:"
+  echo_fr_or_else \
+    "$0 répertoire_parent_dans_espace_projet [--batch [options]]" \
+    "$0 parent_directory_in_project_space [--batch [options]]"
   exit 1
 fi
 
 path="$1"
 
 if [ ! -d "$path" ]; then
-  echo "Error:  '$path' does not exist."
-  echo "Erreur: '$path' n'existe pas."
+  echo_fr_or_else \
+    "Erreur: '$path' n'existe pas." \
+    "Error: '$path' does not exist."
   exit 1
 fi
 
 path=$(realpath $path)
 
 if [[ ! "$path" =~ ^/lustre[[:digit:]]{2}/project/[[:digit:]]*/ ]]; then
-  echo "Error: full path '$path' is not in a project space."
-  echo "Erreur: le chemin '$path' n'est pas dans un espace projet."
+  echo_fr_or_else \
+    "Erreur: le chemin '$path' n'est pas dans un espace projet." \
+    "Error: full path '$path' is not in a project space."
   exit 1
 fi
 
