@@ -13,6 +13,8 @@ version differences between the source and target systems.
 
 local root = "/opt/software/apptainer-1.0"
 
+-- for symlinked /usr/sbin/unsquashfs
+prepend_path("PATH", "/cvmfs/soft.computecanada.ca/custom/software/apptainer/bin")
 prepend_path("PATH", pathJoin(root, "bin"))
 local slurm_tmpdir = os.getenv("SLURM_TMPDIR") or nil
 local scratch = os.getenv("SCRATCH") or "/tmp"
