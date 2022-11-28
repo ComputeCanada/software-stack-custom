@@ -1,12 +1,44 @@
 #!/bin/bash
-if [[ "$#" -ne 1 ]]; then
-	echo "Please provide an argument."
-	exit 1
+
+echo_fr_or_else() {
+  if [[ "$LANG" =~ ^fr_ ]]; then echo "$1"; else echo "$2"; fi
+}
+
+
+if [[ "$#" -lt 1 ]]; then
+  echo_fr_or_else "Syntaxe:" "Usage:"
+  echo_fr_or_else \
+    "$0 répertoire_parent_dans_espace_projet [--batch [options]]" \
+    "$0 parent_directory_in_project_space [--batch [options]]"
+  exit 1
 fi
 
-cmd=$1
-fs=$(echo $cmd | awk -F "/" '{print $2}')
-p=$(echo $cmd | awk -F "/" '{print $3}')
-db="/${fs}/.duc_databases/${p}.sqlite"
+path="$1"
 
-duc ui --database=/${db} $cmd
+if [ ! -d "$path" ]; then
+  echo_fr_or_else \
+    "Erreur: '$path' n'existe pas." \
+    "Error: '$path' does not exist."
+  exit 1
+fi
+
+path=$(realpath $path)
+
+if [[ ! "$path" =~ ^/lustre[[:digit:]]{2}/project/[[:digit:]]*/ ]]; then
+  echo_fr_or_else \
+    "Erreur: le chemin '$path' n'est pas dans un espace projet." \
+    "Error: full path '$path' is not in a project space."
+  exit 1
+fi
+
+gid=$(echo $path | awk -F "/" '{print $4}')
+gname=$(id | cut -d' ' -f3 | cut -d= -f2 | tr , '\n' | grep $gid | cut -d'(' -f2 | cut -d')' -f1)
+
+duc_db="/project/.duc_databases/${gname}.sqlite"
+query_path=$(echo $path | sed -e "s_^/lustre[0-9]\{2\}__g;s_/$gid/_/$gname/_g")
+
+if [ "$2" = "--batch" ]; then
+  duc ls $3 --database=${duc_db} $query_path
+else
+  duc ui --database=${duc_db} $query_path
+fi
