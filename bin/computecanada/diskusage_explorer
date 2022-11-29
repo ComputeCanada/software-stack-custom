@@ -1,6 +1,6 @@
 #!/bin/bash
 
-this_bin=$(basename $0)
+this_bin=$(basename "$0")
 
 echo_fr_or_else() {
   if [[ "$LANG" =~ ^fr_ ]]; then echo "$1"; else echo "$2"; fi
@@ -38,8 +38,8 @@ if [ ! -d "$path" ]; then
 fi
 
 # Get the full path without /lustre0*
-path=$(realpath $path | sed -e "s_^/lustre[0-9]\{2\}__g")
-fs=$(echo $path | awk -F "/" '{print $2}')
+path=$(realpath "$path" | sed -e "s_^/lustre[0-9]\{2\}__g")
+fs=$(echo "$path" | awk -F "/" '{print $2}')
 
 # If the file system is /nearline, abort
 if [ "$fs" = "nearline" ]; then
@@ -51,15 +51,15 @@ fi
 
 # If the path is in the project space
 if [[ "$path" =~ ^/project/[[:digit:]]* ]]; then
-  gid=$(echo $path | awk -F "/" '{print $3}')
+  gid=$(echo "$path" | awk -F "/" '{print $3}')
   gname=$(id | cut -d' ' -f3 | cut -d= -f2 | tr , '\n' | \
     grep $gid | cut -d'(' -f2 | cut -d')' -f1)
 
   duc_db="/project/.duc_databases/${gname}.sqlite"
-  query_path=$(echo $path | sed -e "s_^/project/${gid}_/project/${gname}_g")
+  query_path=$(echo "$path" | sed -e "s_^/project/${gid}_/project/${gname}_g")
 else
   duc_db="/${fs}/.duc_databases/${USER}.sqlite"
-  query_path=$path
+  query_path="$path"
 fi
 
 if [ "$2" = "--batch" ]; then
