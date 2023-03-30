@@ -1,4 +1,6 @@
 require("os")
+local posix = require("posix")
+local stat = posix.stat
 
 if not os.getenv("RSNT_NO_CCCONFIG") then
 --------------------------------------------------------------------------------------------------------
@@ -19,10 +21,9 @@ if not os.getenv("SACCT_FORMAT") then
 	setenv("SACCT_FORMAT","Account,User,JobID,Start,End,AllocCPUS,Elapsed,AllocTRES%30,CPUTime,AveRSS,MaxRSS,MaxRSSTask,MaxRSSNode,NodeList,ExitCode,State%20")
 end
 
--- if SLURM_TMPDIR is set, define TMPDIR to use it unless TMPDIR was already set to something different than /tmp
-if os.getenv("SLURM_TMPDIR") and (not os.getenv("TMPDIR") or os.getenv("TMPDIR") == "/tmp") then
-	setenv("TMPDIR", os.getenv("SLURM_TMPDIR"))
-	setenv("LOCAL_SCRATCH", os.getenv("SLURM_TMPDIR"))
+-- if SLURM_TMPDIR is set, define LOCAL_SCRATCH to use it unless LOCAL_SCRATCH was already set or does not exist
+if os.getenv("SLURM_TMPDIR") and (not os.getenv("LOCAL_SCRATCH") or stat(os.getenv("LOCAL_SCRATCH"), "type") ~= "directory") then
+       setenv("LOCAL_SCRATCH", os.getenv("SLURM_TMPDIR"))
 end
 
 
@@ -47,8 +48,6 @@ local user = os.getenv("USER","unknown")
 local home = os.getenv("HOME",pathJoin("/home",user))
 
 -- define PROJECT and SCRATCH environments
-local posix = require("posix")
-local stat = posix.stat
 
 local def_scratch_dir = pathJoin("/scratch",user)
 local def_project_link = pathJoin(home,"project")
