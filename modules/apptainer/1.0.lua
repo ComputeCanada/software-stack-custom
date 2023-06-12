@@ -23,4 +23,4 @@ if slurm_tmpdir then
 else
 	setenv("APPTAINER_TMPDIR",scratch)
 end
-
+load("apptainer/1.1")
