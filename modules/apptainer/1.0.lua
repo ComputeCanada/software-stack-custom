@@ -11,16 +11,4 @@ version differences between the source and target systems.
 - Website: https://apptainer.org
 - CC-Wiki: Apptainer ]])
 
-local root = "/opt/software/apptainer-1.0"
-
--- for symlinked /usr/sbin/unsquashfs
-prepend_path("PATH", "/cvmfs/soft.computecanada.ca/custom/software/apptainer/bin")
-prepend_path("PATH", pathJoin(root, "bin"))
-local slurm_tmpdir = os.getenv("SLURM_TMPDIR") or nil
-local scratch = os.getenv("SCRATCH") or "/tmp"
-if slurm_tmpdir then
-	setenv("APPTAINER_TMPDIR",slurm_tmpdir)
-else
-	setenv("APPTAINER_TMPDIR",scratch)
-end
-load("apptainer/1.1")
+depends_on("apptainer/1.1")
