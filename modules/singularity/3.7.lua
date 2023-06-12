@@ -11,16 +11,4 @@ version differences between the source and target systems.
 - Website: http://singularity.lbl.gov/ 
 - CC-Wiki: Singularity ]])
 
-local root = "/opt/software/singularity-3.7"
-
--- for symlinked unsquashfs
-prepend_path("PATH", "/cvmfs/soft.computecanada.ca/custom/software/apptainer/bin")
-prepend_path("PATH", pathJoin(root, "bin"))
-local slurm_tmpdir = os.getenv("SLURM_TMPDIR") or nil
-local scratch = os.getenv("SCRATCH") or "/tmp"
-if slurm_tmpdir then
-	setenv("SINGULARITY_TMPDIR",slurm_tmpdir)
-else
-	setenv("SINGULARITY_TMPDIR",scratch)
-end
-
+depends_on("apptainer/1.1")
