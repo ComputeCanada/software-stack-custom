@@ -8,7 +8,6 @@ add_property(   "lmod", "sticky")
 local root = "/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3"
 
 prepend_path("PATH", pathJoin(root, "usr/bin"))
-prepend_path("PATH", pathJoin(root, "usr/sbin"))
 prepend_path("PATH", "/cvmfs/soft.computecanada.ca/custom/bin")
 prepend_path("INFOPATH", pathJoin(root, "usr/share/binutils-data/x86_64-pc-linux-gnu/2.40/info:"))
 prepend_path("MANPATH", pathJoin(root, "usr/share/man"))
