@@ -72,11 +72,18 @@ setenv("EPREFIX", root)
 setenv("EBROOTGENTOO", pathJoin(root, "/usr"))
 setenv("EBVERSIONGENTOO", "2023")
 
+local subdir = "easybuild/modules/2023"
+if arch == "avx512" then
+	subdir = pathJoin(subdir, "x86-64-v4")
+else
+	subdir = pathJoin(subdir, "x86-64-v3")
+end
+
 if (mode() ~= "spider") then
-	prepend_path("MODULEPATH", "/cvmfs/soft.computecanada.ca/easybuild/modules/2023/Core")
-	prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca/easybuild/modules/2023", arch, "Core"))
+	prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca", subdir, "Core"))
+	prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca", subdir, "Compiler/gcccore"))
 	if user ~= "ebuser" then
-		prepend_path("MODULEPATH", pathJoin(home, ".local/easybuild/modules/2023/Core"))
-		prepend_path("MODULEPATH", pathJoin(home, ".local/easybuild/modules/2023", arch, "Core"))
+		prepend_path("MODULEPATH", pathJoin(home, ".local", subdir, "Core"))
+		prepend_path("MODULEPATH", pathJoin(home, ".local", subdir, "Compiler/gcccore"))
 	end
 end
