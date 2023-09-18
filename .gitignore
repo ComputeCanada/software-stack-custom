@@ -8,3 +8,7 @@ reframe
 clusterstats
 bin/computecanada/clusterstats
 __pycache__
+lmod
+mii
+python/.condarc
+test
