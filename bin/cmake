@@ -1,1 +1,10 @@
-/cvmfs/soft.computecanada.ca/easybuild/software/2020/Core/cmake/3.23.1/bin/cmake
+#!/bin/sh
+CMAKEDIR=/usr/bin # fallback
+if [ -n "$NIXUSER_PROFILE" ]; then
+	CMAKEDIR=/cvmfs/soft.computecanada.ca/easybuild/software/2017/Core/cmake/3.16.3/bin
+elif [ "$EBVERSIONGENTOO" = "2020" ]; then
+	CMAKEDIR=/cvmfs/soft.computecanada.ca/easybuild/software/2020/Core/cmake/3.23.1/bin
+elif [ "$EBVERSIONGENTOO" = "2023" ]; then
+	CMAKEDIR=$EBROOTGENTOO/bin
+fi
+exec $CMAKEDIR/$(basename "$0") ${1+"$@"}
