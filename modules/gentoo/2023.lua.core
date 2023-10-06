@@ -53,7 +53,7 @@ if arch == "avx512" then
 else
 	newarch = "x86-64-v3"
 end
-setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-" .. newarch .. "-gentoo.conf")
+setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-" .. newarch .. "-gentoo2023.conf")
 setenv("MII_INDEX_FILE", "/cvmfs/soft.computecanada.ca/custom/mii/data/" .. arch .. "_" .. cpu_vendor_id)
 local user = os.getenv("USER","unknown")
 local home = os.getenv("HOME",pathJoin("/home",user))
