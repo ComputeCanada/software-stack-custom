@@ -47,6 +47,13 @@ if mode() == "load" then
 	setenv("RSNT_CPU_VENDOR_ID", cpu_vendor_id)
 end
 
+-- let pip use our wheel house
+if arch == "avx512" then
+	newarch = "x86-64-v4"
+else
+	newarch = "x86-64-v3"
+end
+setenv("PIP_CONFIG_FILE", "/cvmfs/soft.computecanada.ca/config/python/pip-" .. newarch .. "-gentoo.conf")
 setenv("MII_INDEX_FILE", "/cvmfs/soft.computecanada.ca/custom/mii/data/" .. arch .. "_" .. cpu_vendor_id)
 local user = os.getenv("USER","unknown")
 local home = os.getenv("HOME",pathJoin("/home",user))
@@ -72,12 +79,7 @@ setenv("EPREFIX", root)
 setenv("EBROOTGENTOO", pathJoin(root, "/usr"))
 setenv("EBVERSIONGENTOO", "2023")
 
-local subdir = "easybuild/modules/2023"
-if arch == "avx512" then
-	subdir = pathJoin(subdir, "x86-64-v4")
-else
-	subdir = pathJoin(subdir, "x86-64-v3")
-end
+local subdir = pathJoin("easybuild/modules/2023", newarch)
 
 if (mode() ~= "spider") then
 	prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca", subdir, "Core"))
