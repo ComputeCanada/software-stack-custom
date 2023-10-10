@@ -12,3 +12,4 @@ else
 	load("intel/2016.4")
 end
 load("openmpi/2.1.1")
+append_path("MODULERCFILE", "/cvmfs/soft.computecanada.ca/config/lmod/modulerc_2016_2018") 
