@@ -1,6 +1,5 @@
 #!/bin/bash
 
-echo "Command used: $SSH_ORIGINAL_COMMAND" >> commands.log
 logger -t automation -p local0.info "Command used by $USER: $SSH_ORIGINAL_COMMAND"
 case "$SSH_ORIGINAL_COMMAND" in
 	# file commands
