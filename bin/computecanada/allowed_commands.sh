@@ -3,7 +3,11 @@
 logger -t automation -p local0.info "Command used by $USER: $SSH_ORIGINAL_COMMAND"
 case "$SSH_ORIGINAL_COMMAND" in
 	# file commands
-	ls*|mv*|cp*|rm*|mkdir*)
+	ls*|mv*|cp*|rm*|mkdir*|cat*)
+		$SSH_ORIGINAL_COMMAND
+	;;
+	# git
+	git*)
 		$SSH_ORIGINAL_COMMAND
 	;;
 	# archiving commands
@@ -23,7 +27,7 @@ case "$SSH_ORIGINAL_COMMAND" in
 		$SSH_ORIGINAL_COMMAND
 	;;
 	# slurm commands
-	squeue*|scancel*|sbatch*|scontrol*)
+	squeue*|scancel*|sbatch*|scontrol*|sq*)
 		$SSH_ORIGINAL_COMMAND
 	;;
 	*)
