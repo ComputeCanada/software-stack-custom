@@ -21,6 +21,14 @@ case "$SSH_ORIGINAL_COMMAND" in
 			reject_command
 		fi
 	;;
+	# python commands
+	python*|python3*|python3.6*|python3.7*|python3.8*|python3.9*|python3.10*|python3.11*|python2*|python2.7*)
+		if [[ "$THIS_SCRIPT" == "allowed_command.sh" || "$THIS_SCRIPT" == "python_commands.sh" ]]; then
+			$SSH_ORIGINAL_COMMAND
+		else
+			reject_command
+		fi
+	;;
 	# git
 	git*)
 		if [[ "$THIS_SCRIPT" == "allowed_command.sh" || "$THIS_SCRIPT" == "git_commands.sh" ]]; then
