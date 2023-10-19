@@ -3,11 +3,11 @@
 THIS_SCRIPT=$(basename $0)
 
 function reject_command() {
-	echo "Command rejected: $SSH_ORIGINAL_COMMAND"
-	logger -t automation -p local0.info "Command rejected by $USER: $SSH_ORIGINAL_COMMAND"
+	echo "Command rejected by $THIS_SCRIPT: $SSH_ORIGINAL_COMMAND"
+	logger -t automation -p local0.info "Command rejected by $THIS_SCRIPT for user $USER: $SSH_ORIGINAL_COMMAND"
 
 }
-logger -t automation -p local0.info "Command used by $USER: $SSH_ORIGINAL_COMMAND"
+logger -t automation -p local0.info "Command allowed by $THIS_SCRIPT for user $USER: $SSH_ORIGINAL_COMMAND"
 case "$SSH_ORIGINAL_COMMAND" in
 	# always available commands
 	ls*|cat*|cd*)
