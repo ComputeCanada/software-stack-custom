@@ -7,7 +7,7 @@ function reject_command() {
 	logger -t automation -p local0.info "Command rejected by $THIS_SCRIPT for user $USER: $SSH_ORIGINAL_COMMAND"
 
 }
-logger -t automation -p local0.info "Command allowed by $THIS_SCRIPT for user $USER: $SSH_ORIGINAL_COMMAND"
+logger -t automation -p local0.info "Command called by $THIS_SCRIPT for user $USER: $SSH_ORIGINAL_COMMAND"
 case "$SSH_ORIGINAL_COMMAND" in
 	# always available commands
 	ls*|cat*|cd*)
