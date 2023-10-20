@@ -15,7 +15,7 @@ case "$SSH_ORIGINAL_COMMAND" in
 	;;
 	# file commands
 	mv*|cp*|rm*|mkdir*)
-		if [[ "$THIS_SCRIPT" == "allowed_command.sh" || "$THIS_SCRIPT" == "file_commands.sh" ]]; then
+		if [[ "$THIS_SCRIPT" == "allowed_commands.sh" || "$THIS_SCRIPT" == "file_commands.sh" ]]; then
 			$SSH_ORIGINAL_COMMAND
 		else
 			reject_command
@@ -23,7 +23,7 @@ case "$SSH_ORIGINAL_COMMAND" in
 	;;
 	# python commands
 	python*|python3*|python3.6*|python3.7*|python3.8*|python3.9*|python3.10*|python3.11*|python2*|python2.7*)
-		if [[ "$THIS_SCRIPT" == "allowed_command.sh" || "$THIS_SCRIPT" == "python_commands.sh" ]]; then
+		if [[ "$THIS_SCRIPT" == "allowed_commands.sh" || "$THIS_SCRIPT" == "python_commands.sh" ]]; then
 			$SSH_ORIGINAL_COMMAND
 		else
 			reject_command
@@ -31,7 +31,7 @@ case "$SSH_ORIGINAL_COMMAND" in
 	;;
 	# git
 	git*)
-		if [[ "$THIS_SCRIPT" == "allowed_command.sh" || "$THIS_SCRIPT" == "git_commands.sh" ]]; then
+		if [[ "$THIS_SCRIPT" == "allowed_commands.sh" || "$THIS_SCRIPT" == "git_commands.sh" ]]; then
 			$SSH_ORIGINAL_COMMAND
 		else
 			reject_command
@@ -39,7 +39,7 @@ case "$SSH_ORIGINAL_COMMAND" in
 	;;
 	# archiving commands
 	tar*|dar*|gzip*|zip*|bzip2*)
-		if [[ "$THIS_SCRIPT" == "allowed_command.sh" || "$THIS_SCRIPT" == "archiving_commands.sh" ]]; then
+		if [[ "$THIS_SCRIPT" == "allowed_commands.sh" || "$THIS_SCRIPT" == "archiving_commands.sh" ]]; then
 			$SSH_ORIGINAL_COMMAND
 		else
 			reject_command
@@ -47,7 +47,7 @@ case "$SSH_ORIGINAL_COMMAND" in
 	;;
 	# rsync
 	rsync*)
-		if [[ "$THIS_SCRIPT" == "allowed_command.sh" || "$THIS_SCRIPT" == "transfer_commands.sh" ]]; then
+		if [[ "$THIS_SCRIPT" == "allowed_commands.sh" || "$THIS_SCRIPT" == "transfer_commands.sh" ]]; then
 			$SSH_ORIGINAL_COMMAND
 		else
 			reject_command
@@ -55,7 +55,7 @@ case "$SSH_ORIGINAL_COMMAND" in
 	;;
 	# sftp and new scp
 	/usr/libexec/openssh/sftp-server*)
-		if [[ "$THIS_SCRIPT" == "allowed_command.sh" || "$THIS_SCRIPT" == "transfer_commands.sh" ]]; then
+		if [[ "$THIS_SCRIPT" == "allowed_commands.sh" || "$THIS_SCRIPT" == "transfer_commands.sh" ]]; then
 			$SSH_ORIGINAL_COMMAND
 		else
 			reject_command
@@ -63,7 +63,7 @@ case "$SSH_ORIGINAL_COMMAND" in
 	;;
 	# old scp
 	scp*)
-		if [[ "$THIS_SCRIPT" == "allowed_command.sh" || "$THIS_SCRIPT" == "transfer_commands.sh" ]]; then
+		if [[ "$THIS_SCRIPT" == "allowed_commands.sh" || "$THIS_SCRIPT" == "transfer_commands.sh" ]]; then
 			$SSH_ORIGINAL_COMMAND
 		else
 			reject_command
@@ -71,7 +71,7 @@ case "$SSH_ORIGINAL_COMMAND" in
 	;;
 	# slurm commands
 	squeue*|scancel*|sbatch*|scontrol*|sq*)
-		if [[ "$THIS_SCRIPT" == "allowed_command.sh" || "$THIS_SCRIPT" == "slurm_commands.sh" ]]; then
+		if [[ "$THIS_SCRIPT" == "allowed_commands.sh" || "$THIS_SCRIPT" == "slurm_commands.sh" ]]; then
 			$SSH_ORIGINAL_COMMAND
 		else
 			reject_command
