@@ -82,10 +82,10 @@ setenv("EBVERSIONGENTOO", "2023")
 local subdir = pathJoin("easybuild/modules/2023", newarch)
 
 if (mode() ~= "spider") then
-	prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca", subdir, "Core"))
+	prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca/easybuild/modules/2023/x86-64-v3/Core"))
 	prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca", subdir, "Compiler/gcccore"))
 	if user ~= "ebuser" then
-		prepend_path("MODULEPATH", pathJoin(home, ".local", subdir, "Core"))
+		prepend_path("MODULEPATH", pathJoin(home, ".local/easybuild/modules/2023/x86-64-v3/Core"))
 		prepend_path("MODULEPATH", pathJoin(home, ".local", subdir, "Compiler/gcccore"))
 	end
 end
