@@ -10,7 +10,7 @@ function reject_command() {
 logger -t automation -p local0.info "Command called by $THIS_SCRIPT for user $USER: $SSH_ORIGINAL_COMMAND"
 case "$SSH_ORIGINAL_COMMAND" in
 	# always available commands
-	ls*|cat*|cd*|echo*|uname*)
+	ls*|cat*|cd*|echo*|uname*|id*|groups*)
 		$SSH_ORIGINAL_COMMAND
 	;;
 	# file commands
