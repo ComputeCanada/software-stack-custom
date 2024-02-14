@@ -18,9 +18,14 @@ if (mode() == "spider") then
 end
 
 load("imkl")
-load("intel")
-load("openmpi")
 local cpu_vendor_id = os.getenv("RSNT_CPU_VENDOR_ID")
+local arch = os.getenv("RSNT_ARCH")
+if cpu_vendor_id == "amd" and arch == "avx512" then
+	load("gcc")
+else
+	load("intel")
+end
+load("openmpi")
 if cpu_vendor_id == "amd" then
 	load("flexiblas")
 	load("blis")
