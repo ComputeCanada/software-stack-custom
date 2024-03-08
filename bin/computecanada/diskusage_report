@@ -52,7 +52,7 @@ done
 
 
 REPORT_USER_QUOTA_ON_PROJECT=0
-if [[ "$CC_CLUSTER" == "cedar" || "$CC_CLUSTER" == "graham" || "$CC_CLUSTER" == "beluga" || "$CC_CLUSTER" == "siku" ]]; then
+if [[ "$CC_CLUSTER" == "cedar" || "$CC_CLUSTER" == "graham" || "$CC_CLUSTER" == "beluga" || "$CC_CLUSTER" == "siku" || "$CC_CLUSTER" == "argo" ]]; then
 	REPORT_USER_QUOTA_ON_PROJECT=1
 fi
 REPORT_NEARLINE_QUOTA=0
@@ -60,7 +60,7 @@ if [[ "$CC_CLUSTER" == "narval" ]]; then
 	REPORT_NEARLINE_QUOTA=1
 fi
 QUOTA_IN_FILES=0
-if [[ "$CC_CLUSTER" == "siku" ]]; then
+if [[ "$CC_CLUSTER" == "siku" || "$CC_CLUSTER" == "argo" ]]; then
 	QUOTA_IN_FILES=1
 	QUOTA_INFO_PATH="/opt/software/diskusage"
 	QUOTA_UPDATE_INTERVAL="every 3 hours"
