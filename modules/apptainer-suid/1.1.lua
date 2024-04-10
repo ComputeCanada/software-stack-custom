@@ -13,14 +13,9 @@ version differences between the source and target systems.
 
 local root = "/opt/software/apptainer-1.1"
 
--- for symlinked /usr/sbin/unsquashfs
-prepend_path("PATH", "/cvmfs/soft.computecanada.ca/custom/software/apptainer/bin")
 prepend_path("PATH", pathJoin(root, "bin"))
-local slurm_tmpdir = os.getenv("SLURM_TMPDIR") or nil
-local scratch = os.getenv("SCRATCH") or "/tmp"
-if slurm_tmpdir then
-	setenv("APPTAINER_TMPDIR",slurm_tmpdir)
-else
-	setenv("APPTAINER_TMPDIR",scratch)
-end
-
+-- for symlinked /usr/sbin/unsquashfs and apptainer wrapper
+prepend_path("PATH", "/cvmfs/soft.computecanada.ca/custom/software/apptainer/bin")
+setenv("EBROOTAPPTAINER", root)
+setenv("EBVERSIONAPPTAINER", "1.1")
+assert(loadfile("/cvmfs/soft.computecanada.ca/config/lmod/apptainer_custom.lua"))()

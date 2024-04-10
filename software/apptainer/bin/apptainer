@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+if [[ -z "$APPTAINER_TMPDIR" ]]; then
+        export APPTAINER_TMPDIR="/var/tmp"
+        if [[ -d "/localscratch" && -w "/localscratch" ]]; then
+                export APPTAINER_TMPDIR="/localscratch"
+        fi
+fi
+exec $EBROOTAPPTAINER/bin/apptainer ${1+"$@"}

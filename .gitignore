@@ -1,7 +1,12 @@
 anaconda
 python/envs
 python/wheelhouse
-software
+software/2020
+software/centos6.sif
+software/librt-compat
+software/lmod
+software/lua
+software/tcl
 *.py[co]
 reframe
 *.tar.*
