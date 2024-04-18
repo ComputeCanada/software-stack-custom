@@ -12,13 +12,14 @@ if (mode() == "spider") then
 	else
 		newarch = "x86-64-v3"
 	end
+	local coresubdir = "easybuild/modules/2023/x86-64-v3"
 	local subdir = pathJoin("easybuild/modules/2023", newarch)
-	prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca", subdir, "Core"))
+	prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca", coresubdir, "Core"))
 	prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca", subdir, "Compiler/gcccore"))
 	local user = os.getenv("USER","unknown")
 	local home = os.getenv("HOME",pathJoin("/home",user))
 	if user ~= "ebuser" then
-		prepend_path("MODULEPATH", pathJoin(home, ".local", subdir, "Core"))
+		prepend_path("MODULEPATH", pathJoin(home, ".local", coresubdir, "Core"))
 		prepend_path("MODULEPATH", pathJoin(home, ".local", subdir, "Compiler/gcccore"))
 	end
 end
