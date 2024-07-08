@@ -12,6 +12,14 @@ if not arch or arch == "" then
 		arch = get_highest_supported_architecture()
 	end
 end
+if arch ~= "avx2" and arch ~= "avx512" then
+	local lang = os.getenv("LANG") or "en"
+	if string.sub(lang,1,2) == "fr" then
+		LmodError("L'environnement StdEnv/2023 n'est pas disponible pour l'architecture " .. arch .. ".")
+	else
+		LmodError("The StdEnv/2023 environment is not available for architecture " .. arch .. ".")
+	end
+end
 if not cpu_vendor_id or cpu_vendor_id == "" then
 	cpu_vendor_id = get_cpu_vendor_id()
 end

@@ -4,14 +4,16 @@ require("os")
 load("CCconfig")
 load("gentoo/2023")
 
-if (mode() == "spider") then
-	-- set by gentoo/2023 module
-	local arch = os.getenv("RSNT_ARCH")
-	if arch == "avx512" then
-		newarch = "x86-64-v4"
-	else
-		newarch = "x86-64-v3"
-	end
+-- set by gentoo/2023 module
+local arch = os.getenv("RSNT_ARCH")
+if arch == "avx2" then
+	newarch = "x86-64-v3"
+elseif arch == "avx512" then
+	newarch = "x86-64-v4"
+end
+-- gentoo/2023 will not load for sse3 and avx
+
+if (mode() == "spider" and (arch == "avx2" or arch == "avx512")) then
 	local coresubdir = "easybuild/modules/2023/x86-64-v3"
 	local subdir = pathJoin("easybuild/modules/2023", newarch)
 	prepend_path("MODULEPATH", pathJoin("/cvmfs/soft.computecanada.ca", coresubdir, "Core"))
