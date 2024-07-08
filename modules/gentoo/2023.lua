@@ -15,9 +15,9 @@ end
 if arch ~= "avx2" and arch ~= "avx512" then
 	local lang = os.getenv("LANG") or "en"
 	if string.sub(lang,1,2) == "fr" then
-		LmodError("RSNT_ARCH=sse3 et RSNT_ARCH=avx ne sont plus soutenus dans StdEnv/2023.")
+		LmodError("L'environnement StdEnv/2023 n'est pas disponible pour l'architecture " .. arch .. ".")
 	else
-		LmodError("RSNT_ARCH=sse3 and RSNT_ARCH=avx are no longer supported in StdEnv/2023.")
+		LmodError("The StdEnv/2023 environment is not available for architecture " .. arch .. ".")
 	end
 end
 if not cpu_vendor_id or cpu_vendor_id == "" then
