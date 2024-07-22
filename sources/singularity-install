@@ -1,3 +1,4 @@
 #!/bin/sh
 module --force purge
-singularity exec -B/cvmfs /cvmfs/soft.computecanada.ca/custom/software/centos6.sif $1
+module load gentoo apptainer
+apptainer exec -B/cvmfs /cvmfs/soft.computecanada.ca/custom/software/centos6.sif $1

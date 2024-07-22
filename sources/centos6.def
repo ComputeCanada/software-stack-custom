@@ -1,6 +1,6 @@
 BootStrap: yum
 OSVersion: 6 
-MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/x86_64/
+MirrorURL: https://vault.centos.org/centos/%{OSVERSION}/os/x86_64/
 Include: yum
 
 # If you want the updates (available at the bootstrap date) to be installed
@@ -19,4 +19,6 @@ Include: yum
     touch /var/lib/rpm/*
     rpm --rebuilddb
     rpm -qa
-    yum -y install vim-minimal glibc-devel ncurses-static readline-static gcc gawk tar rsync procps patch bzip2
+    sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+    sed -i 's|#baseurl=http://mirror.centos.org/centos/$releasever|baseurl=http://vault.centos.org/centos/6|g' /etc/yum.repos.d/CentOS-*
+    yum -y install vim-minimal glibc-devel ncurses-static readline-static gcc gawk tar rsync procps patch bzip2 bc
