@@ -121,9 +121,13 @@ function get_quota_info_from_files {
 		echo "QUOTA_FILE_NOT_FOUND"
 	fi
 }
-function get_oceanstor_user_info {
-        user=$1
-	$(dirname $0)/oceanstor-quota $user
+function get_nfs_info {
+	fs=$1
+	#Filesystem  blocks   quota   limit    grace    files     quota   limit   grace
+        #ic-gra-home1:/home 23513344  52428800          52428800  151218  500000  500000     
+        #ic-gra-home1:/home 41383528  52428800 52428800 566437* 500000  500000   5days
+
+	/usr/bin/quota --no-wrap -f $1 | grep $1 | awk '{print int($2)*1024,$3*1024,int($5),$6}'
 }
 function scale {
 	num=$1
@@ -215,7 +219,7 @@ function find_and_report_usage {
 		fi
 	else
 		if [[ "$fs" == "/home" && "$HOME_TYPE" == "nfs" ]]; then
-			data=($(get_oceanstor_user_info $who))
+			data=($(get_nfs_info $fs))
 			report_data $who $fs_name user ${data[0]} ${data[1]} ${data[2]} ${data[3]} b
 		else
 			project_info=($(get_projectinfo $fs/$who))
