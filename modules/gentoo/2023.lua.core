@@ -36,6 +36,8 @@ if os.getenv("XDG_CONFIG_DIRS") then
 else
 	setenv("XDG_CONFIG_DIRS", pathJoin(root, "etc/xdg") .. ":/etc/xdg")
 end
+local fpath = capture("unset FPATH; " .. pathJoin(root, "usr/bin/zsh -f -c 'echo $FPATH'")):gsub("\n$","")
+prepend_path("FPATH", fpath)
 
 require("os")
 -- Define RSNT variables
