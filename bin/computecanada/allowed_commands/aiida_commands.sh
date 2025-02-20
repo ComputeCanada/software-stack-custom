@@ -22,7 +22,16 @@ G_WHOAMI="^bash -l -c 'cd ['\"]+${HOME}['\"]+ && \( whoami \)'$"
 G_WHOAMI1="^bash -c 'cd ['\"]+${HOME}['\"]+ && \( whoami \)'$"
 G_ECHO="^bash -l -c 'cd ['\"]+${HOME}['\"]+ && \( echo -n \)'$"
 
-declare -a arr=("$G_SFTP" "$G_SBATCH" "$G_RM" "$G_SQUEUE" "$G_SACCT" "$G_WHOAMI" "$G_WHOAMI1" "$G_ECHO")
+# add versions for case where there are no quotes around ALLOWED_DIR
+G_SBATCH_NQ="^bash -l -c 'cd ${ALLOWED_DIR}.* &&\s+\( sbatch .* \)'$"
+G_RM_NQ="^bash -l -c 'cd ${ALLOWED_DIR}.* &&\s+\( rm.* \)'$"
+G_SQUEUE_NQ="^bash -l -c 'cd ${HOME} &&\s+\( SLURM_TIME_FORMAT=['\"]+standard['\"]+ squeue.* \)'$"
+G_SACCT_NQ="^bash -l -c 'cd ${HOME} &&\s+\( sacct .* \)'$"
+G_WHOAMI_NQ="^bash -l -c 'cd ${HOME} &&\s+\( whoami \)'$"
+G_WHOAMI1_NQ="^bash -c 'cd ${HOME} &&\s+\( whoami \)'$"
+G_ECHO_NQ="^bash -l -c 'cd ${HOME} &&\s+\( echo -n \)'$"
+
+declare -a arr=("$G_SFTP" "$G_SBATCH" "$G_RM" "$G_SQUEUE" "$G_SACCT" "$G_WHOAMI" "$G_WHOAMI1" "$G_ECHO" "$G_SBATCH_NQ" "$G_RM_NQ" "$G_SQUEUE_NQ" "$G_SACCT_NQ" "$G_WHOAMI_NQ" "$G_WHOAMI1_NQ" "$G_ECHO_NQ")
 
 COMMAND_PASSED=false
 for i in "${arr[@]}"
