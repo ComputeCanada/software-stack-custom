@@ -65,6 +65,10 @@ if [[ "$CC_CLUSTER" == "siku" || "$CC_CLUSTER" == "argo" ]]; then
 	QUOTA_INFO_PATH="/opt/software/diskusage"
 	QUOTA_UPDATE_INTERVAL="every 3 hours"
 fi
+SYMLINK_PATH_PROJECTS="projects"
+if [[ "$CC_CLUSTER" == "tamia" ]]; then
+	SYMLINK_PATH_PROJECTS="links"
+fi
 
 function get_projects {
 	FS=$1
@@ -263,11 +267,11 @@ if [[ "$ARG_ALL" == 1 || "$ARG_PROJECT" == 1 ]]; then
 		if [[ "$REPORT_USER_QUOTA_ON_PROJECT" == "1" ]]; then
 			find_and_report_usage $USER /project
 		fi
-		for p in $(get_projects "projects"); do
+		for p in $(get_projects "$SYMLINK_PATH_PROJECTS"); do
 			find_and_report_usage $p /project
 		done
 	
-		for p in $(get_projects "projects"); do
+		for p in $(get_projects "$SYMLINK_PATH_PROJECTS"); do
 			fs="project"
 			db="/${fs}/.duc_databases/${p}.sqlite"
 			if [[ -f "$db" ]]; then
