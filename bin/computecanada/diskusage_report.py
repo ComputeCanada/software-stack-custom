@@ -6,8 +6,8 @@ import glob
 import os
 from pathlib import Path
 
-SUPPORTED_FS_TYPES = ['lustre', 'nfs']
-SUPPORTED_FS = ['/home', '/scratch', '/project', '/nearline']
+SUPPORTED_FS_TYPES = ('lustre', 'nfs')
+SUPPORTED_FS = ('/home', '/scratch', '/project', '/nearline')
 SYMLINK_PATHS = ['scratch', ('projects', '*'), ('nearline', '*'), ('links', '*'), ('links/projects', '*'), ('links/nearline', '*')]
 DEFAULT_QUOTA_TYPES = { '/home': 'user', '/scratch': 'user', '/project': 'group', '/nearline': 'group' }
 SPACE_FACTOR = 1000
@@ -48,7 +48,6 @@ def get_relevant_paths():
     for path in SYMLINK_PATHS:
         if isinstance(path, str):
             try_path = os.path.join(home, path)
-            print(os.path.basename(try_path))
             if os.path.islink(try_path) and os.path.basename(try_path) in valid_link_names:
                 paths.add(os.path.realpath(try_path))
         elif isinstance(path, tuple):
@@ -56,7 +55,6 @@ def get_relevant_paths():
             if os.path.isdir(try_dir):
                 try_subpaths = glob.glob(os.path.join(try_dir, path[1]))
                 for subpath in try_subpaths:
-                    print(os.path.basename(subpath))
                     if os.path.islink(subpath) and os.path.basename(subpath) in valid_link_names:
                         paths.add(os.path.realpath(subpath))
 
@@ -121,12 +119,6 @@ def get_quotas(paths_info):
 
 if __name__ == "__main__":
     relevant_paths = get_relevant_paths()
-    print(relevant_paths)
     network_filesystems = get_network_filesystems()
     paths_info = get_paths_info(relevant_paths, network_filesystems)
     get_quotas(paths_info)
-    for path, path_info in paths_info.items():
-        print(path, path_info)
-#    print(get_paths_info(get_relevant_paths(), get_network_filesystems()))
-#    print(get_command_output("lfs project -d /home/mboisson"))
-#    print(get_network_filesystems())
