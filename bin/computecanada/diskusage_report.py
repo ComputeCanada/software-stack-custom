@@ -67,6 +67,7 @@ def get_paths_info(paths, filesystems):
         path = Path(path)
         if not path.is_dir(): continue
         path_info = {}
+        path_info['path'] = str(path.resolve())
         path_info['user'] = path.owner()
         path_info['group'] = path.group()
         path_info['filesystem'] = [fs for fs in filesystems.keys() if fs in str(path.resolve())][0]
@@ -76,10 +77,17 @@ def get_paths_info(paths, filesystems):
         else:
             path_info['project'] = None
 
+        if path_info['fs_type'] == 'nfs':
+            if get_command_output(f"df {path_info['path']} -h | grep {path_info['filesystem']}") != get_command_output(f"df {path_info['filesystem']} -h | grep {path_info['filesystem']}"):
+                path_info['project'] = path_info['group']
+            else:
+                path_info['project'] = None
+
         if path_info['project']:
             path_info['quota_type'] = 'project'
         else:
             path_info['quota_type'] = DEFAULT_QUOTA_TYPES[path_info['filesystem']]
+
         paths_info[str(path.resolve())] = path_info
     return paths_info
 
@@ -91,10 +99,18 @@ def get_quota(path_info, quota_type):
     if fs_type == 'lustre':
         flag = {'project': '-p', 'user': '-u', 'group': '-g'}[quota_type]
         command = f"/usr/bin/lfs quota -q {flag} {identity} {filesystem} | awk '{{print $2,$3,$6,$7}}' | sed -e 's/\*//g'"
+        data = get_command_output(command).split(' ')
     elif fs_type == 'nfs':
-        command = f"/usr/bin/quota --no-wrap -f {filesystem} | grep {filesystem} | awk '{{print $2,$3,$5,$6}}'"
+        if quota_type == 'user':
+            command = f"/usr/bin/quota --no-wrap -f {filesystem} | grep {filesystem} | awk '{{print $2,$3,$5,$6}}'"
+            data = get_command_output(command).split(' ')
+        if quota_type == 'project':
+            command = f"df {path_info['path']} | grep {filesystem} | awk '{{print $3,$4}}'"
+            data = get_command_output(command).split(' ')
+            command = f"df --inodes {path_info['path']} | grep {filesystem} | awk '{{print $3,$4}}'"
+            data += get_command_output(command).split(' ')
 
-    data = get_command_output(command).split(' ')
+
     if isinstance(data, list) and len(data) == 4:
         quota_info = {}
         quota_info['quota_type'] = quota_type
