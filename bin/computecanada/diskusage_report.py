@@ -116,9 +116,38 @@ def get_quotas(paths_info):
         if path_info['fs_type'] == 'lustre' and path_info['filesystem'] == '/project' and path_info['quota_type'] != 'project':
             path_info['quotas'] += [get_quota(path_info, 'user')]
 
+def sizeof_fmt(num, suffix="B", scale=1024, units=None):
+    if not units:
+        if scale == 1024:
+            units = ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi")
+        elif scale == 1000:
+            units = ("", "K", "M", "G", "T", "P", "E", "Z", "Y")
+        else:
+            return "Error, please provide units to sizeof_fmt"
+
+    for unit in units:
+        if abs(num) <= 10*scale:
+            return f"{num:4.0f}{unit}{suffix}"
+        num /= scale
+    return f"{num:.0f}{units[-1]}{suffix}"
+
+def report_quotas(paths_info):
+    header = ["Description", "Space", "# of files"]
+    scale_space = 1000
+    print(f"{header[0]:>40} {header[1]:>20} {header[2]:>20}")
+    for fs in SUPPORTED_FS:
+        for path, path_info in paths_info.items():
+            if path_info['filesystem'] == fs:
+                for quota_info in path_info['quotas']:
+                    description = f"{path_info['filesystem']} ({quota_info['quota_type']} {quota_info['identity_name']})"
+                    space = f"{sizeof_fmt(quota_info['space_used_bytes'], scale=scale_space)}/{sizeof_fmt(quota_info['space_quota_bytes'], scale=scale_space)}"
+                    files = f"{sizeof_fmt(quota_info['file_used'], suffix='', scale=1000)}/{sizeof_fmt(quota_info['file_quota'], suffix='', scale=1000)}"
+                    print(f"{description:>40} {space:>20} {files:>20}")
+
 
 if __name__ == "__main__":
     relevant_paths = get_relevant_paths()
     network_filesystems = get_network_filesystems()
     paths_info = get_paths_info(relevant_paths, network_filesystems)
     get_quotas(paths_info)
+    report_quotas(paths_info)
