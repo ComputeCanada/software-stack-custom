@@ -95,9 +95,9 @@ def get_paths_info(paths, filesystems):
         paths_info[str(path.resolve())] = path_info
     return paths_info
 
-def get_quota(path_info, quota_type):
+def get_quota(path_info, quota_type, quota_identity=None):
     fs_type = path_info['fs_type']
-    identity = path_info[quota_type]
+    identity = quota_identity or path_info[quota_type]
     filesystem = path_info['filesystem']
 
     if fs_type == 'lustre':
@@ -119,7 +119,7 @@ def get_quota(path_info, quota_type):
         quota_info = {}
         quota_info['quota_type'] = quota_type
         quota_info['identity'] = identity
-        quota_info['identity_name'] = path_info['user'] if quota_type == 'user' else path_info['group']
+        quota_info['identity_name'] = path_info['user'] if quota_type == 'user' else quota_identity or path_info['group']
         quota_info['space_used_raw'] = int(data[0])
         quota_info['space_quota_raw'] = int(data[1])
         quota_info['file_used'] = int(data[2])
@@ -134,8 +134,11 @@ def get_quotas(paths_info):
     for path, path_info in paths_info.items():
         path_info['quotas'] = []
         path_info['quotas'] += [get_quota(path_info, path_info['quota_type'])]
+    # add quota for group 'user' if lustre and group quota
+    for path, path_info in paths_info.items():
         if path_info['fs_type'] == 'lustre' and path_info['filesystem'] == '/project' and path_info['quota_type'] != 'project':
-            path_info['quotas'] += [get_quota(path_info, 'user')]
+            path_info['quotas'] += [get_quota(path_info, 'group', path_info['user'])]
+            break
 
 def sizeof_fmt(num, suffix="B", scale=1024, units=None):
     if not units:
