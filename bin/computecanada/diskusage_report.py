@@ -147,7 +147,7 @@ def sizeof_fmt(num, suffix="B", scale=1024, units=None):
             return "Error, please provide units to sizeof_fmt"
 
     for unit in units:
-        if abs(num) <= 10*scale:
+        if abs(num) < 10*scale:
             return f"{num:4.0f}{unit}{suffix}"
         num /= scale
     return f"{num:.0f}{units[-1]}{suffix}"
