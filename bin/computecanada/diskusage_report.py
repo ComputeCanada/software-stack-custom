@@ -73,7 +73,11 @@ def get_paths_info(paths, filesystems):
         path_info['filesystem'] = [fs for fs in filesystems.keys() if fs in str(path.resolve())][0]
         path_info['fs_type'] = filesystems[path_info['filesystem']]['fs_type']
         if path_info['fs_type'] == 'lustre':
-            path_info['project'] = get_command_output(f"/usr/bin/lfs project -d {path.resolve()} 2>/dev/null | awk '{{print $1}}'")
+            project = get_command_output(f"/usr/bin/lfs project -d {path.resolve()} 2>/dev/null | awk '{{print $1}}'")
+            if project != "0":
+                path_info['project'] = project
+            else:
+                path_info['project'] = None
         else:
             path_info['project'] = None
 
