@@ -156,7 +156,11 @@ def report_quotas(paths_info):
         for path, path_info in paths_info.items():
             if path_info['filesystem'] == fs:
                 for quota_info in path_info['quotas']:
-                    if not quota_info: continue
+                    if not quota_info:
+                        description = f"{path_info['path']}"
+                        error = f"Unable to retrieve quota"
+                        print(f"{description:>40} {error:>60}")
+                        continue
                     description = f"{path_info['filesystem']} ({quota_info['quota_type']} {quota_info['identity_name']})"
                     space = f"{sizeof_fmt(quota_info['space_used_bytes'], scale=scale_space)}/{sizeof_fmt(quota_info['space_quota_bytes'], scale=scale_space)}"
                     files = f"{sizeof_fmt(quota_info['file_used'], suffix='', scale=1000)}/{sizeof_fmt(quota_info['file_quota'], suffix='', scale=1000)}"
