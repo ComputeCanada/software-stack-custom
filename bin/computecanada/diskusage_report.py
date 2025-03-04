@@ -6,9 +6,10 @@ import glob
 import os
 import sys
 from pathlib import Path
+from datetime import datetime
 
 SUPPORTED_FS_TYPES = {'lustre', 'nfs'}
-SUPPORTED_FS = {'/home', '/scratch', '/project', '/nearline'}
+SUPPORTED_FS = ['/home', '/scratch', '/project', '/nearline']
 SYMLINK_PATHS = ['scratch', ('projects', '*'), ('nearline', '*'), ('links', '*'), ('links/projects', '*'), ('links/nearline', '*')]
 DEFAULT_QUOTA_TYPES = { '/home': 'user', '/scratch': 'user', '/project': 'group', '/nearline': 'group' }
 SPACE_FACTOR = 1000
@@ -171,6 +172,7 @@ def sizeof_fmt(num, suffix="B", scale=1024, units=None):
 def report_quotas(paths_info):
     header = ["Description", "Space", "# of files"]
     scale_space = 1000
+    has_explorer = False
     print(f"{header[0]:>40} {header[1]:>20} {header[2]:>20}")
     for fs in SUPPORTED_FS:
         get_quotas(paths_info, [fs])
@@ -188,14 +190,38 @@ def report_quotas(paths_info):
                     files = f"{sizeof_fmt(quota_info['file_used'], suffix='', scale=1000)}/{sizeof_fmt(quota_info['file_quota'], suffix='', scale=1000)}"
                     print(f"{description:>40} {space:>20} {files:>20}")
 
+        has_explorer |= add_explorer_commands(paths_info, fs)
+
+    # report breakdown commands
+    if has_explorer:
+        print("\nDisk usage can be explored using the following commands")
+        for fs in SUPPORTED_FS:
+            for path, path_info in paths_info.items():
+                if path_info['filesystem'] == fs:
+                    if 'explorer_command' in path_info:
+                        print(path_info['explorer_command'])
+
+def add_explorer_commands(paths_info, filesystem):
+    has_explorer = False
+    for path, path_info in paths_info.items():
+        if path_info['filesystem'] == filesystem:
+            db_path = os.path.join(filesystem, ".duc_databases", f"{path_info['group']}.sqlite")
+            if os.path.isfile(db_path):
+                timestamp = Path(db_path).stat().st_mtime
+                m_time = datetime.fromtimestamp(timestamp)
+                path_info['explorer_command'] = f"diskusage_explorer {filesystem}/{path_info['group']} \t (Last update: {m_time:%Y-%m-%d %H:%M:%S})"
+                has_explorer = True
+    return has_explorer
+
+
 
 if __name__ == "__main__":
     if any([args.scratch, args.nearline, args.project, args.home]):
         SUPPORTED_FS.clear()
-        if args.scratch: SUPPORTED_FS.add('/scratch')
-        if args.nearline: SUPPORTED_FS.add('/nearline')
-        if args.project: SUPPORTED_FS.add('/project')
-        if args.home: SUPPORTED_FS.add('/home')
+        if args.home: SUPPORTED_FS.append('/home')
+        if args.scratch: SUPPORTED_FS.append('/scratch')
+        if args.project: SUPPORTED_FS.append('/project')
+        if args.nearline: SUPPORTED_FS.append('/nearline')
 
     relevant_paths = get_relevant_paths()
     network_filesystems = get_network_filesystems()
