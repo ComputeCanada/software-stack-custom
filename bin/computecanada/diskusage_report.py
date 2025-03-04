@@ -130,15 +130,20 @@ def get_quota(path_info, quota_type, quota_identity=None):
     else:
         return None
 
-def get_quotas(paths_info):
-    for path, path_info in paths_info.items():
-        path_info['quotas'] = []
-        path_info['quotas'] += [get_quota(path_info, path_info['quota_type'])]
-    # add quota for group 'user' if lustre and group quota
-    for path, path_info in paths_info.items():
-        if path_info['fs_type'] == 'lustre' and path_info['filesystem'] == '/project' and path_info['quota_type'] != 'project':
-            path_info['quotas'] += [get_quota(path_info, 'group', path_info['user'])]
-            break
+def get_quotas(paths_info, filesystems=SUPPORTED_FS):
+    for filesystem in filesystems:
+        for path, path_info in paths_info.items():
+            if path_info['filesystem'] != filesystem: continue
+            path_info['quotas'] = []
+            path_info['quotas'] += [get_quota(path_info, path_info['quota_type'])]
+
+        # add quota for group 'user' if lustre and group quota
+        # second loop because we only add it once, even if there are multiple paths on /project
+        for path, path_info in paths_info.items():
+            if path_info['filesystem'] != filesystem: continue
+            if path_info['fs_type'] == 'lustre' and path_info['filesystem'] == '/project' and path_info['quota_type'] != 'project':
+                path_info['quotas'] += [get_quota(path_info, 'group', path_info['user'])]
+                break
 
 def sizeof_fmt(num, suffix="B", scale=1024, units=None):
     if not units:
@@ -160,6 +165,7 @@ def report_quotas(paths_info):
     scale_space = 1000
     print(f"{header[0]:>40} {header[1]:>20} {header[2]:>20}")
     for fs in SUPPORTED_FS:
+        get_quotas(paths_info, [fs])
         for path, path_info in paths_info.items():
             if path_info['filesystem'] == fs:
                 for quota_info in path_info['quotas']:
@@ -179,5 +185,4 @@ if __name__ == "__main__":
     relevant_paths = get_relevant_paths()
     network_filesystems = get_network_filesystems()
     paths_info = get_paths_info(relevant_paths, network_filesystems)
-    get_quotas(paths_info)
     report_quotas(paths_info)
