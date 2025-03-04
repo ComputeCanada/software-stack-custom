@@ -19,8 +19,8 @@ parser.add_argument("--home", default=False, action='store_true', help="Display 
 parser.add_argument("--scratch", default=False, action='store_true', help="Display information for the scratch filesystem")
 parser.add_argument("--project", default=False, action='store_true', help="Display information for the project filesystem")
 parser.add_argument("--nearline", default=False, action='store_true', help="Display information for the nearline filesystem")
-parser.add_argument("--per-user", default=False, action='store_true', help="Display per-user breakdown if available")
-parser.add_argument("--all-user", default=False, action='store_true', help="Display information for all users of the project")
+parser.add_argument("--per_user", default=False, action='store_true', help="Display per-user breakdown if available")
+parser.add_argument("--all_users", default=False, action='store_true', help="Display information for all users of the project")
 args = parser.parse_args()
 
 def get_network_filesystems():
@@ -176,6 +176,7 @@ def report_quotas(paths_info):
     print(f"{header[0]:>40} {header[1]:>20} {header[2]:>20}")
     for fs in SUPPORTED_FS:
         get_quotas(paths_info, [fs])
+        has_explorer |= add_explorer_commands(paths_info, fs)
         for path, path_info in paths_info.items():
             if path_info['filesystem'] == fs:
                 for quota_info in path_info['quotas']:
@@ -190,7 +191,19 @@ def report_quotas(paths_info):
                     files = f"{sizeof_fmt(quota_info['file_used'], suffix='', scale=1000)}/{sizeof_fmt(quota_info['file_quota'], suffix='', scale=1000)}"
                     print(f"{description:>40} {space:>20} {files:>20}")
 
-        has_explorer |= add_explorer_commands(paths_info, fs)
+        # display breakdowns per user if requested
+        for path, path_info in paths_info.items():
+            if path_info['filesystem'] == fs:
+                if args.per_user:
+                    stats_path = os.path.join(fs, ".stats", f"{path_info['group']}.json")
+                    if os.path.isfile(stats_path):
+                        timestamp = Path(stats_path).stat().st_mtime
+                        m_time = datetime.fromtimestamp(timestamp)
+                        print(f"\nBreakdown for project {path_info['group']} (Last update: {m_time:%Y-%m-%d %H:%M:%S})")
+                        diskusage_rbh_arg = ["--all_users"] if args.all_users else []
+                        subprocess.run(["diskusage_rbh", fs[1:], path_info['group']] + diskusage_rbh_arg)
+                        print("\n")
+
 
     # report breakdown commands
     if has_explorer:
@@ -227,3 +240,8 @@ if __name__ == "__main__":
     network_filesystems = get_network_filesystems()
     paths_info = get_paths_info(relevant_paths, network_filesystems)
     report_quotas(paths_info)
+
+    if not args.per_user and any([x in SUPPORTED_FS for x in ['/project', '/nearline']]):
+        print("--")
+        print("On some clusters, a break down per user may be available by adding the option '--per_user'.")
+
