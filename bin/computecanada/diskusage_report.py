@@ -4,6 +4,7 @@ import argparse
 import subprocess
 import glob
 import os
+import sys
 from pathlib import Path
 
 SUPPORTED_FS_TYPES = {'lustre', 'nfs'}
@@ -28,6 +29,9 @@ def get_network_filesystems():
             device, mount_point, fs_type, *_ = tuple(mount_line.split())
             if fs_type in SUPPORTED_FS_TYPES and mount_point in SUPPORTED_FS:
                 network_fs[mount_point] = {'fs_type': fs_type}
+    if len(network_fs) == 0:
+        print("ERROR: Did not find any supported filesystems. Exiting.")
+        sys.exit(1)
     return network_fs
 
 def get_command_output(command):
