@@ -6,8 +6,8 @@ import glob
 import os
 from pathlib import Path
 
-SUPPORTED_FS_TYPES = ('lustre', 'nfs')
-SUPPORTED_FS = ('/home', '/scratch', '/project', '/nearline')
+SUPPORTED_FS_TYPES = {'lustre', 'nfs'}
+SUPPORTED_FS = {'/home', '/scratch', '/project', '/nearline'}
 SYMLINK_PATHS = ['scratch', ('projects', '*'), ('nearline', '*'), ('links', '*'), ('links/projects', '*'), ('links/nearline', '*')]
 DEFAULT_QUOTA_TYPES = { '/home': 'user', '/scratch': 'user', '/project': 'group', '/nearline': 'group' }
 SPACE_FACTOR = 1000
@@ -70,7 +70,11 @@ def get_paths_info(paths, filesystems):
         path_info['path'] = str(path.resolve())
         path_info['user'] = path.owner()
         path_info['group'] = path.group()
-        path_info['filesystem'] = [fs for fs in filesystems.keys() if fs in str(path.resolve())][0]
+        # if the symlink does not point to a filesystem that was requested, skip
+        try:
+            path_info['filesystem'] = [fs for fs in filesystems.keys() if fs in str(path.resolve())][0]
+        except:
+            continue
         path_info['fs_type'] = filesystems[path_info['filesystem']]['fs_type']
         if path_info['fs_type'] == 'lustre':
             project = get_command_output(f"/usr/bin/lfs project -d {path.resolve()} 2>/dev/null | awk '{{print $1}}'")
@@ -182,6 +186,13 @@ def report_quotas(paths_info):
 
 
 if __name__ == "__main__":
+    if any([args.scratch, args.nearline, args.project, args.home]):
+        SUPPORTED_FS.clear()
+        if args.scratch: SUPPORTED_FS.add('/scratch')
+        if args.nearline: SUPPORTED_FS.add('/nearline')
+        if args.project: SUPPORTED_FS.add('/project')
+        if args.home: SUPPORTED_FS.add('/home')
+
     relevant_paths = get_relevant_paths()
     network_filesystems = get_network_filesystems()
     paths_info = get_paths_info(relevant_paths, network_filesystems)
