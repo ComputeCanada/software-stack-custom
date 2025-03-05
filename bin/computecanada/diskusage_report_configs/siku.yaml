@@ -1,0 +1,11 @@
+filesystems:
+  /home:
+    quota_type: user
+  /scratch:
+    quota_type: user
+  /project:
+    quota_type: group
+    extra_quotas:
+      - quota_type: group
+        quota_id: user
+gpfs_diskusage_location: /opt/software/diskusage/siku

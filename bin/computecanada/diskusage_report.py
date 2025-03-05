@@ -20,9 +20,9 @@ DEFAULT_CONFIG = {
         '/nearline': {'quota_type': 'group'},
     },
     'symlink_paths': ['scratch', ('projects', '*'), ('nearline', '*'), ('links', '*'), ('links/projects', '*'), ('links/nearline', '*')],
+    'gpfs_diskusage_location': None,
 }
 cfg = DEFAULT_CONFIG
-GPFS_DISKUSAGE_LOCATION=os.path.join("/opt/software/diskusage/", os.environ.get("CC_CLUSTER"))
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--home", default=False, action='store_true', help="Display information for the home filesystem")
@@ -145,7 +145,7 @@ def get_quota(path_info, quota_type, quota_identity=None):
         elif quota_type == 'group':
             qt = 'g'
             qtype = 'GRP'
-        fn = os.path.join(GPFS_DISKUSAGE_LOCATION, qt, filesystem.removeprefix('/'), identity)
+        fn = os.path.join(cfg['gpfs_diskusage_location'], qt, filesystem.removeprefix('/'), identity)
         with open(fn, 'r') as quota_file:
             line = quota_file.readlines()[-1]
             tokens = line.split()
