@@ -9,10 +9,19 @@ from pathlib import Path
 from datetime import datetime
 
 SUPPORTED_FS_TYPES = {'lustre', 'nfs', 'gpfs'}
-SUPPORTED_FS = ['/home', '/scratch', '/project', '/nearline']
-SYMLINK_PATHS = ['scratch', ('projects', '*'), ('nearline', '*'), ('links', '*'), ('links/projects', '*'), ('links/nearline', '*')]
-DEFAULT_QUOTA_TYPES = { '/home': 'user', '/scratch': 'user', '/project': 'group', '/nearline': 'group' }
-SPACE_FACTOR = 1000
+
+CONFIG_PATH = "/cvmfs/soft.computecanada.ca/custom/bin/computecanada/diskusage_report_configs/"
+DEFAULT_CONFIG = {
+    'scale_space': 1000,
+    'filesystems': {
+        '/home': {'quota_type': 'user'},
+        '/scratch': {'quota_type': 'user'},
+        '/project': {'quota_type': 'group'},
+        '/nearline': {'quota_type': 'group'},
+    },
+    'symlink_paths': ['scratch', ('projects', '*'), ('nearline', '*'), ('links', '*'), ('links/projects', '*'), ('links/nearline', '*')],
+}
+cfg = DEFAULT_CONFIG
 GPFS_DISKUSAGE_LOCATION=os.path.join("/opt/software/diskusage/", os.environ.get("CC_CLUSTER"))
 
 parser = argparse.ArgumentParser()
@@ -30,12 +39,12 @@ def get_network_filesystems():
     with open('/proc/mounts', 'r') as f:
         for mount_line in f.readlines():
             device, mount_point, fs_type, *_ = tuple(mount_line.split())
-            if fs_type in SUPPORTED_FS_TYPES and mount_point in SUPPORTED_FS:
+            if fs_type in SUPPORTED_FS_TYPES and mount_point in cfg['filesystems'].keys():
                 network_fs[mount_point] = {'fs_type': fs_type}
             elif fs_type == 'gpfs':
                 found_gpfs = True
     if found_gpfs:
-        for fs in SUPPORTED_FS:
+        for fs in cfg['filesystems'].keys():
             if os.path.isdir( os.path.join('/gpfs', fs)):
                 network_fs[fs] = {'fs_type': 'gpfs'}
     if len(network_fs) == 0:
@@ -58,7 +67,7 @@ def get_relevant_paths():
     home = os.environ['HOME']
     paths = set()
     paths.add(home)
-    for path in SYMLINK_PATHS:
+    for path in cfg['symlink_paths']:
         if isinstance(path, str):
             try_path = os.path.join(home, path)
             if os.path.islink(try_path) and os.path.basename(try_path) in valid_link_names:
@@ -107,7 +116,7 @@ def get_paths_info(paths, filesystems):
         if path_info['project']:
             path_info['quota_type'] = 'project'
         else:
-            path_info['quota_type'] = DEFAULT_QUOTA_TYPES[path_info['filesystem']]
+            path_info['quota_type'] = cfg['filesystems'][path_info['filesystem']]['quota_type']
 
         paths_info[str(path.resolve())] = path_info
     return paths_info
@@ -116,10 +125,9 @@ def get_quota(path_info, quota_type, quota_identity=None):
     fs_type = path_info['fs_type']
     identity = quota_identity or path_info[quota_type]
     filesystem = path_info['filesystem']
-
     if fs_type == 'lustre':
         flag = {'project': '-p', 'user': '-u', 'group': '-g'}[quota_type]
-        command = f"/usr/bin/lfs quota -q {flag} {identity} {filesystem} | awk '{{print $2,$3,$6,$7}}' | sed -e 's/\*//g'"
+        command = f"/usr/bin/lfs quota -q {flag} {identity} {filesystem} | grep '{filesystem}' |awk '{{print $2,$3,$6,$7}}' | sed -e 's/\*//g'"
         data = get_command_output(command).split(' ')
     elif fs_type == 'nfs':
         if quota_type == 'user':
@@ -158,25 +166,25 @@ def get_quota(path_info, quota_type, quota_identity=None):
         quota_info['space_quota_raw'] = int(data[1])
         quota_info['file_used'] = int(data[2])
         quota_info['file_quota'] = int(data[3])
-        quota_info['space_used_bytes'] = quota_info['space_used_raw'] * SPACE_FACTOR
-        quota_info['space_quota_bytes'] = quota_info['space_quota_raw'] * SPACE_FACTOR
+        quota_info['space_used_bytes'] = quota_info['space_used_raw'] * cfg['scale_space']
+        quota_info['space_quota_bytes'] = quota_info['space_quota_raw'] * cfg['scale_space']
         return quota_info
     else:
         return None
 
-def get_quotas(paths_info, filesystems=SUPPORTED_FS):
+def get_quotas(paths_info, filesystems=None):
+    if not filesystems: filesystems = cfg['filesystems'].keys()
     for filesystem in filesystems:
         for path, path_info in paths_info.items():
             if path_info['filesystem'] != filesystem: continue
             path_info['quotas'] = []
             path_info['quotas'] += [get_quota(path_info, path_info['quota_type'])]
 
-        # add quota for group 'user' if lustre and group quota
-        # second loop because we only add it once, even if there are multiple paths on /project
-        for path, path_info in paths_info.items():
-            if path_info['filesystem'] != filesystem: continue
-            if path_info['fs_type'] == 'lustre' and path_info['filesystem'] == '/project' and path_info['quota_type'] != 'project':
-                path_info['quotas'] += [get_quota(path_info, 'group', path_info['user'])]
+        # add extra quotas
+        for extra_quota in cfg['filesystems'][filesystem].get('extra_quotas', []):
+            for path, path_info in paths_info.items():
+                if path_info['filesystem'] != filesystem: continue
+                path_info['quotas'] += [get_quota(path_info, extra_quota['quota_type'], path_info[extra_quota['quota_id']])]
                 break
 
 def sizeof_fmt(num, suffix="B", scale=1024, units=None):
@@ -196,10 +204,10 @@ def sizeof_fmt(num, suffix="B", scale=1024, units=None):
 
 def report_quotas(paths_info):
     header = ["Description", "Space", "# of files"]
-    scale_space = 1000
+    scale_space = cfg['scale_space']
     has_explorer = False
     print(f"{header[0]:>40} {header[1]:>20} {header[2]:>20}")
-    for fs in SUPPORTED_FS:
+    for fs in cfg['filesystems'].keys():
         get_quotas(paths_info, [fs])
         has_explorer |= add_explorer_commands(paths_info, fs)
         for path, path_info in paths_info.items():
@@ -233,7 +241,7 @@ def report_quotas(paths_info):
     # report breakdown commands
     if has_explorer:
         print("\nDisk usage can be explored using the following commands")
-        for fs in SUPPORTED_FS:
+        for fs in cfg['filesystems'].keys():
             for path, path_info in paths_info.items():
                 if path_info['filesystem'] == fs:
                     if 'explorer_command' in path_info:
@@ -254,19 +262,25 @@ def add_explorer_commands(paths_info, filesystem):
 
 
 if __name__ == "__main__":
+    config_file = os.getenv('DISKUSAGE_REPORT_CONFIG_FILE', os.path.join(CONFIG_PATH, f"{os.getenv('CC_CLUSTER')}.yaml"))
+    config_file = Path(config_file)
+    if os.path.isfile(config_file.resolve()):
+        import yaml
+        with open(config_file) as f:
+            cfg.update(yaml.load(f, Loader=yaml.FullLoader))
+
     if any([args.scratch, args.nearline, args.project, args.home]):
-        SUPPORTED_FS.clear()
-        if args.home: SUPPORTED_FS.append('/home')
-        if args.scratch: SUPPORTED_FS.append('/scratch')
-        if args.project: SUPPORTED_FS.append('/project')
-        if args.nearline: SUPPORTED_FS.append('/nearline')
+        if not args.home: cfg['filesystems'].pop('/home', None)
+        if not args.scratch: cfg['filesystems'].pop('/scratch', None)
+        if not args.project: cfg['filesystems'].pop('/project', None)
+        if not args.nearline: cfg['filesystems'].pop('/nearline', None)
 
     relevant_paths = get_relevant_paths()
     network_filesystems = get_network_filesystems()
     paths_info = get_paths_info(relevant_paths, network_filesystems)
     report_quotas(paths_info)
 
-    if not args.per_user and any([x in SUPPORTED_FS for x in ['/project', '/nearline']]):
+    if not args.per_user and any([x in cfg['filesystems'].keys() for x in ['/project', '/nearline']]):
         print("--")
         print("On some clusters, a break down per user may be available by adding the option '--per_user'.")
 
