@@ -117,10 +117,9 @@ def get_quota(path_info, quota_type, quota_identity=None):
     fs_type = path_info['fs_type']
     identity = quota_identity or path_info[quota_type]
     filesystem = path_info['filesystem']
-
     if fs_type == 'lustre':
         flag = {'project': '-p', 'user': '-u', 'group': '-g'}[quota_type]
-        command = f"/usr/bin/lfs quota -q {flag} {identity} {filesystem} | awk '{{print $2,$3,$6,$7}}' | sed -e 's/\*//g'"
+        command = f"/usr/bin/lfs quota -q {flag} {identity} {filesystem} | grep '{filesystem}' |awk '{{print $2,$3,$6,$7}}' | sed -e 's/\*//g'"
         data = get_command_output(command).split(' ')
     elif fs_type == 'nfs':
         if quota_type == 'user':
