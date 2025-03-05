@@ -147,7 +147,7 @@ def get_quota(path_info, quota_type, quota_identity=None):
         # YYYY-mm-dd_HH:MM  Name  fileset  type  KB  quota  limit  in_doubt  grace  |  files  quota  limit  in_doubt  grace
         # Since a column with "fileset" may or may not be present and "grace" may contain a space (e.g. "2 days") we need to 
         # find the index of USR or GRP (type column) or the '|' that separates Block Limits from File Limits.
-        data = [tokens[tokens.index(qtype)+1], tokens[tokens.index(qtype)+1], tokens[tokens.index('|')+1], tokens[tokens.index('|')+2]]
+        data = [tokens[tokens.index(qtype)+1], tokens[tokens.index(qtype)+2], tokens[tokens.index('|')+1], tokens[tokens.index('|')+2]]
 
     if isinstance(data, list) and len(data) == 4:
         quota_info = {}
