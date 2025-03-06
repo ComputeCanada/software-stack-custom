@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-SUPPORTED_FS_TYPES = {'lustre', 'nfs'}
+SUPPORTED_FS_TYPES = {'lustre', 'nfs', 'gpfs'}
 
 CONFIG_PATH = "/cvmfs/soft.computecanada.ca/custom/bin/computecanada/diskusage_report_configs/"
 DEFAULT_CONFIG = {
@@ -20,6 +20,7 @@ DEFAULT_CONFIG = {
         '/nearline': {'quota_type': 'group'},
     },
     'symlink_paths': ['scratch', ('projects', '*'), ('nearline', '*'), ('links', '*'), ('links/projects', '*'), ('links/nearline', '*')],
+    'gpfs_diskusage_location': None,
 }
 cfg = DEFAULT_CONFIG
 
@@ -34,11 +35,18 @@ args = parser.parse_args()
 
 def get_network_filesystems():
     network_fs = {}
+    found_gpfs = False
     with open('/proc/mounts', 'r') as f:
         for mount_line in f.readlines():
             device, mount_point, fs_type, *_ = tuple(mount_line.split())
             if fs_type in SUPPORTED_FS_TYPES and mount_point in cfg['filesystems'].keys():
                 network_fs[mount_point] = {'fs_type': fs_type}
+            elif fs_type == 'gpfs':
+                found_gpfs = True
+    if found_gpfs:
+        for fs in cfg['filesystems'].keys():
+            if os.path.isdir( os.path.join('/gpfs', fs)):
+                network_fs[fs] = {'fs_type': 'gpfs'}
     if len(network_fs) == 0:
         print("ERROR: Did not find any supported filesystems. Exiting.")
         sys.exit(1)
@@ -130,7 +138,24 @@ def get_quota(path_info, quota_type, quota_identity=None):
             data = get_command_output(command).split(' ')
             command = f"df --inodes {path_info['path']} | grep {filesystem} | awk '{{print $3,$4}}'"
             data += get_command_output(command).split(' ')
-
+    elif fs_type == 'gpfs':
+        if quota_type == 'user':
+            qt = 'u'
+            qtype = 'USR'
+        elif quota_type == 'group':
+            qt = 'g'
+            qtype = 'GRP'
+        fn = os.path.join(cfg['gpfs_diskusage_location'], qt, filesystem.removeprefix('/'), identity)
+        with open(fn, 'r') as quota_file:
+            line = quota_file.readlines()[-1]
+            tokens = line.split()
+        # GPFS quota file format is:
+        # YYYY-mm-dd_HH:MM  Name           type  KB  quota  limit  in_doubt  grace  |  files  quota  limit  in_doubt  grace
+        # or
+        # YYYY-mm-dd_HH:MM  Name  fileset  type  KB  quota  limit  in_doubt  grace  |  files  quota  limit  in_doubt  grace
+        # Since a column with "fileset" may or may not be present and "grace" may contain a space (e.g. "2 days") we need to 
+        # find the index of USR or GRP (type column) or the '|' that separates Block Limits from File Limits.
+        data = [tokens[tokens.index(qtype)+1], tokens[tokens.index(qtype)+2], tokens[tokens.index('|')+1], tokens[tokens.index('|')+2]]
 
     if isinstance(data, list) and len(data) == 4:
         quota_info = {}
