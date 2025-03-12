@@ -209,7 +209,7 @@ def report_quotas(paths_info):
     has_explorer = False
     print(f"{header[0]:>40} {header[1]:>20} {header[2]:>20}")
     for fs in cfg['filesystems'].keys():
-        space_display_scale = cfg['filesystems'][fs].get('space_display_scale', cfg.get('space_display_scale', 1000))
+        space_display_scale = cfg['filesystems'][fs].get('space_display_scale', cfg.get('space_display_scale', 1024))
         get_quotas(paths_info, [fs])
         has_explorer |= add_explorer_commands(paths_info, fs)
         for path, path_info in paths_info.items():
