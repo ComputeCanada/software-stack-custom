@@ -1,0 +1,7 @@
+space_display_scale: 1000
+filesystems:
+  /home:
+    space_display_scale: 1024
+  /scratch:
+    space_display_scale: 1024
+
