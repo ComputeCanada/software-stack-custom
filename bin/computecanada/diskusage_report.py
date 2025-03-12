@@ -184,7 +184,10 @@ def get_quotas(paths_info, filesystems=None):
         for extra_quota in cfg['filesystems'][filesystem].get('extra_quotas', []):
             for path, path_info in paths_info.items():
                 if path_info['filesystem'] != filesystem: continue
-                path_info['quotas'] += [get_quota(path_info, extra_quota['quota_type'], path_info[extra_quota['quota_id']])]
+                if extra_quota['quota_id'] == 'user':
+                    path_info['quotas'] += [get_quota(path_info, extra_quota['quota_type'], os.getlogin())]
+                else:
+                    path_info['quotas'] += [get_quota(path_info, extra_quota['quota_type'], path_info[extra_quota['quota_id']])]
                 break
 
 def sizeof_fmt(num, suffix="B", scale=1024, units=None):
