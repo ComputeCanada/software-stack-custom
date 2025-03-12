@@ -134,9 +134,9 @@ def get_quota(path_info, quota_type, quota_identity=None):
             command = f"/usr/bin/quota --no-wrap -f {filesystem} | grep {filesystem} | awk '{{print $2,$3,$5,$6}}'"
             data = get_command_output(command).split(' ')
         if quota_type == 'project':
-            command = f"df {path_info['path']} | grep {filesystem} | awk '{{print $3,$4}}'"
+            command = f"df {path_info['path']} | grep {filesystem} | awk '{{print $3,$2}}'"
             data = get_command_output(command).split(' ')
-            command = f"df --inodes {path_info['path']} | grep {filesystem} | awk '{{print $3,$4}}'"
+            command = f"df --inodes {path_info['path']} | grep {filesystem} | awk '{{print $3,$2}}'"
             data += get_command_output(command).split(' ')
     elif fs_type == 'gpfs':
         if quota_type == 'user':
