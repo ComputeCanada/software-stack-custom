@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr/bin/python
 #import configparser
 import argparse
 import subprocess
