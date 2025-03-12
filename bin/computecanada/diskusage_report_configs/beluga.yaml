@@ -1,4 +1,5 @@
 space_display_scale: 1000
+factor_to_bytes: 1000 # liar!
 filesystems:
   /home:
     quota_type: user
