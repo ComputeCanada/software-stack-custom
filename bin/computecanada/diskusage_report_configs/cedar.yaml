@@ -1,0 +1,12 @@
+filesystems:
+  /home:
+    quota_type: user
+  /scratch:
+    quota_type: project
+  /project:
+    quota_type: group
+    extra_quotas:
+      - quota_type: group
+        quota_id: user
+  /nearline:
+    quota_type: project
