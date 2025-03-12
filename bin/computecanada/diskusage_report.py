@@ -12,7 +12,6 @@ SUPPORTED_FS_TYPES = {'lustre', 'nfs', 'gpfs'}
 
 CONFIG_PATH = "/cvmfs/soft.computecanada.ca/custom/bin/computecanada/diskusage_report_configs/"
 DEFAULT_CONFIG = {
-    'scale_space': 1000,
     'filesystems': {
         '/home': {'quota_type': 'user'},
         '/scratch': {'quota_type': 'user'},
@@ -166,8 +165,8 @@ def get_quota(path_info, quota_type, quota_identity=None):
         quota_info['space_quota_raw'] = int(data[1])
         quota_info['file_used'] = int(data[2])
         quota_info['file_quota'] = int(data[3])
-        quota_info['space_used_bytes'] = quota_info['space_used_raw'] * cfg['scale_space']
-        quota_info['space_quota_bytes'] = quota_info['space_quota_raw'] * cfg['scale_space']
+        quota_info['space_used_bytes'] = quota_info['space_used_raw'] * int(cfg['filesystems'][filesystem].get('factor_to_bytes', 1024))
+        quota_info['space_quota_bytes'] = quota_info['space_quota_raw'] * int(cfg['filesystems'][filesystem].get('factor_to_bytes', 1024))
         return quota_info
     else:
         return None
@@ -207,10 +206,10 @@ def sizeof_fmt(num, suffix="B", scale=1024, units=None):
 
 def report_quotas(paths_info):
     header = ["Description", "Space", "# of files"]
-    scale_space = cfg['scale_space']
     has_explorer = False
     print(f"{header[0]:>40} {header[1]:>20} {header[2]:>20}")
     for fs in cfg['filesystems'].keys():
+        space_display_scale = cfg['filesystems'][fs].get('space_display_scale', cfg.get('space_display_scale', 1024))
         get_quotas(paths_info, [fs])
         has_explorer |= add_explorer_commands(paths_info, fs)
         for path, path_info in paths_info.items():
@@ -223,7 +222,7 @@ def report_quotas(paths_info):
                         continue
                     quota_type = 'user' if path_info['filesystem'] in ('/home', '/scratch') else quota_info['quota_type']
                     description = f"{path_info['filesystem']} ({quota_type} {quota_info['identity_name']})"
-                    space = f"{sizeof_fmt(quota_info['space_used_bytes'], scale=scale_space)}/{sizeof_fmt(quota_info['space_quota_bytes'], scale=scale_space)}"
+                    space = f"{sizeof_fmt(quota_info['space_used_bytes'], scale=space_display_scale)}/{sizeof_fmt(quota_info['space_quota_bytes'], scale=space_display_scale)}"
                     files = f"{sizeof_fmt(quota_info['file_used'], suffix='', scale=1000)}/{sizeof_fmt(quota_info['file_quota'], suffix='', scale=1000)}"
                     print(f"{description:>40} {space:>20} {files:>20}")
 
@@ -262,7 +261,24 @@ def add_explorer_commands(paths_info, filesystem):
                 has_explorer = True
     return has_explorer
 
+def deep_update_dict(dict1, dict2):
+    # for each k, v in dict1, merge the corresponding values from dict2
+    for k, v in dict1.items():
+        if k in dict2.keys():
+            if isinstance(v, dict):
+                # merge the next level if it's a dict
+                deep_update_dict(v, dict2[k])
+            elif isinstance(v, list):
+                # combine lists if it's a list
+                dict1[k] += dict2[k]
+            else:
+                # overwrite value if it's anything else
+                dict1[k] = dict2[k]
 
+    # for each key in dict2 that is not in dict1, add them to dict1
+    for k, v in dict2.items():
+        if k not in dict1.keys():
+            dict1[k] = v
 
 if __name__ == "__main__":
     config_file = os.getenv('DISKUSAGE_REPORT_CONFIG_FILE', os.path.join(CONFIG_PATH, f"{os.getenv('CC_CLUSTER')}.yaml"))
@@ -270,7 +286,7 @@ if __name__ == "__main__":
     if os.path.isfile(config_file.resolve()):
         import yaml
         with open(config_file) as f:
-            cfg.update(yaml.load(f, Loader=yaml.FullLoader))
+            deep_update_dict(cfg, yaml.load(f, Loader=yaml.FullLoader))
 
     if any([args.scratch, args.nearline, args.project, args.home]):
         if not args.home: cfg['filesystems'].pop('/home', None)
