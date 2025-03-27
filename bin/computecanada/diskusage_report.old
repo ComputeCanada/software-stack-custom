@@ -1,0 +1,350 @@
+#!/bin/bash
+
+VERBOSITY=3
+if [[ $# -ge 1 ]]; then
+	VERBOSITY=$1
+fi
+
+function print_usage {
+	echo "Usage: $0 [--home] [--scratch] [--project] [--nearline] [--per_user] [--all_users] [--help]"
+	echo ""
+	echo "  --home         Display information for the home filesystem"
+	echo "  --scratch      Display information for the scratch filesystem"
+	echo "  --project      Display information for the project filesystem"
+	echo "  --nearline     Display information for the nearline filesystem"
+	echo "  --per_user     Display per-user breakdown if available"
+	echo "  --all_users    Display information for all users of the project"
+	echo "  --help         Display this help"
+}
+
+TEMP=$(getopt -o h --longoptions help,per_user,home,scratch,project,nearline,all_users -n $0 -- "$@")
+eval set -- "$TEMP"
+
+ARG_PER_USER=0
+ARG_ALL=1
+ARG_HOME=0
+ARG_SCRATCH=0
+ARG_PROJECT=0
+ARG_NEARLINE=0
+ARG_ALL_USERS=""
+while true; do
+	case "$1" in
+		--per_user)
+			ARG_PER_USER=1; shift ;;
+		--home)
+			ARG_ALL=0; ARG_HOME=1; shift ;;
+		--scratch)
+			ARG_ALL=0; ARG_SCRATCH=1; shift ;;
+		--project)
+			ARG_ALL=0; ARG_PROJECT=1; shift ;;
+		--nearline)
+			ARG_ALL=0; ARG_NEARLINE=1; shift ;;
+		--all_users)
+			ARG_ALL_USERS="--all_users"; 
+			ARG_PER_USER=1;
+			shift ;;
+		-h|--help)
+			print_usage; exit 0 ;;
+		--) shift; break ;;
+		*) echo "Unknown parameter $1"; print_usage; exit 1 ;;
+	esac
+done
+
+
+REPORT_USER_QUOTA_ON_PROJECT=0
+if [[ "$CC_CLUSTER" == "cedar" || "$CC_CLUSTER" == "graham" || "$CC_CLUSTER" == "beluga" || "$CC_CLUSTER" == "siku" || "$CC_CLUSTER" == "argo" ]]; then
+	REPORT_USER_QUOTA_ON_PROJECT=1
+fi
+REPORT_NEARLINE_QUOTA=0
+if [[ "$CC_CLUSTER" == "narval" ]]; then
+	REPORT_NEARLINE_QUOTA=1
+fi
+QUOTA_IN_FILES=0
+if [[ "$CC_CLUSTER" == "siku" || "$CC_CLUSTER" == "argo" ]]; then
+	QUOTA_IN_FILES=1
+	QUOTA_INFO_PATH="/opt/software/diskusage"
+	QUOTA_UPDATE_INTERVAL="every 3 hours"
+fi
+SCALE="scale"
+SYMLINK_PATH_PROJECTS="projects"
+if [[ "$CC_CLUSTER" == "tamia" ]]; then
+	SCALE="scale_binary"
+	SYMLINK_PATH_PROJECTS="links"
+fi
+
+function get_projects {
+	FS=$1
+	projects_links=$(find $HOME/$FS -maxdepth 1 -type l )
+	groups=$(groups 2>/dev/null)
+	groups=${groups// /|}
+	projects=""
+	for p in $projects_links; do
+		project=$(basename $p)
+		# exclude any link which is not also a group
+		if [[ "$project" =~ ^($groups)$ ]]; then
+			projects="$project $projects"
+		fi
+	done
+	echo $projects
+}
+function get_projectinfo {
+	path=$1
+	if [[ -L $path ]]; then
+		path=$(readlink -f $path)
+	fi
+	lfs project -d $path 2>/dev/null | awk '{print $1,$2}'
+}
+function get_lustre_group_info {
+	# returns 4 values. space usage, space quota, file usage, file quota
+	lfs quota -q -g $1 $2 | awk '{print $2,$3,$6,$7}' | sed -e 's/\*//g'
+}
+function get_lustre_project_info {
+	# returns 4 values. space usage, space quota, file usage, file quota
+	lfs quota -q -p $1 $2 | awk '{print $2,$3,$6,$7}' | sed -e 's/\*//g'
+}
+function get_lustre_user_info {
+	# returns 4 values. space usage, space quota, file usage, file quota
+	lfs quota -q -u $1 $2 | awk '{print $2,$3,$6,$7}' | sed -e 's/\*//g'
+}
+function get_quota_info_from_files {
+	# takes 'user|group filesystem u|g', where the latter is 'type'
+	t=$3
+	[[ "$t" == "user" ]] && t="u"
+	[[ "$t" == "group" ]] && t="g"
+	quota_file="$QUOTA_INFO_PATH/$CC_CLUSTER/$t/$2/$1"
+	if [[ -f $quota_file ]]; then
+		# returns 9 values. time, space usage, space soft quota, space hard quota,
+		#   space in doubt, grace period, file usage, file soft quota, file hard quota
+		#   - file format is different if filesets are in use...
+		if [ $CC_CLUSTER == "siku" ] ; then
+			tail -1 $quota_file | sed 's/ \(days\|hours\?\)/_\1/g' | awk '{print $1,$4,$5,$6,$7,$8,$10,$11,$12}' | sed -e 's/\*//g'
+		elif [ $CC_CLUSTER == "argo" ] ; then
+			tail -1 $quota_file | sed 's/ \(days\|hours\?\)/_\1/g' | awk '{print $1,$5,$6,$7,$8,$9,$11,$12,$13}' | sed -e 's/\*//g'
+		else
+		    echo "QUOTA_FORMAT_NOT_DETECTED"
+		fi
+	else
+		echo "QUOTA_FILE_NOT_FOUND"
+	fi
+}
+function get_nfs_info {
+	fs=$1
+	#Filesystem  blocks   quota   limit    grace    files     quota   limit   grace
+        #ic-gra-home1:/home 23513344  52428800          52428800  151218  500000  500000     
+        #ic-gra-home1:/home 41383528  52428800 52428800 566437* 500000  500000   5days
+
+	/usr/bin/quota --no-wrap -f $1 | grep $1 | awk '{print int($2)*1024,$3*1024,int($5),$6}'
+}
+function scale {
+	num=$1
+	if [[ $num -ge $((10*1000*1000*1000*1000)) ]]; then 
+		echo "$((num / (1000*1000*1000*1000)))T" 
+	elif [[ $num -ge $((10*1000*1000*1000)) ]]; then 
+		echo "$((num / (1000*1000*1000)))G" 
+	elif [[ $num -ge $((10*1000*1000)) ]]; then
+		echo "$((num / (1000*1000)))M" 
+	elif [[ $num -ge $((10*1000)) ]]; then
+		echo "$((num / (1000)))k" 
+	else
+		echo "$num"
+	fi
+}
+function scale_binary {
+	num_bytes=$1
+	if [[ $num_bytes -ge $((10*1024*1024*1024*1024)) ]]; then
+		echo "$((num_bytes / (1024*1024*1024*1024))) TiB"
+	elif [[ $num_bytes -ge $((10*1024*1024*1024)) ]]; then
+		echo "$((num_bytes / (1024*1024*1024))) GiB"
+	elif [[ $num_bytes -ge $((10*1024*1024)) ]]; then
+		echo "$((num_bytes / (1024*1024))) MiB"
+	elif [[ $num_bytes -ge $((10*1024)) ]]; then
+		echo "$((num_bytes / (1024))) kiB"
+	else
+		echo "$num_bytes B"
+	fi
+}
+function scale_bytes {
+        num_bytes=$(($1*1024))
+        if [[ $num_bytes -ge $((10*1024*1024*1024*1024)) ]]; then
+                echo "$((num_bytes / (1024*1024*1024*1024))) TB"
+        elif [[ $num_bytes -ge $((10*1024*1024*1024)) ]]; then
+                echo "$((num_bytes / (1024*1024*1024))) GB"
+        elif [[ $num_bytes -ge $((10*1024*1024)) ]]; then
+                echo "$((num_bytes / (1024*1024))) MB"
+        elif [[ $num_bytes -ge $((10*1024)) ]]; then
+                echo "$((num_bytes / (1024))) kB"
+        else
+                echo "$num_bytes B"
+        fi
+}
+function validate_data {
+	if [[ ! $1 =~ ^[0-9]+$ ]]; then
+		echo 1
+	elif [[ ! $2 =~ ^[0-9]+$ ]]; then
+		echo 1
+	elif [[ ! $3 =~ ^[0-9]+$ ]]; then
+		echo 1
+	elif [[ ! $4 =~ ^[0-9]+$ ]]; then
+		echo 1
+	else
+		echo 0
+	fi
+}
+function report_data {
+	who=$1
+	fs=$2
+	quotatype=$3
+	usage_space=$4
+	quota_space=$5
+	usage_files=$6
+	quota_files=$7
+	space_unit=$8
+
+	valid=$(validate_data $usage_space $quota_space $usage_files $quota_files)
+	if [[ $valid -ne 0 ]]; then
+		printf "%40s %60s\n" "$fs ($quotatype $who)" "Error retrieving quota information"
+	else
+		if [[ "$space_unit" == "kb" && "$SCALE" == "scale" ]]; then
+			usage_space=$((1000*$usage_space))
+			quota_space=$((1000*$quota_space))
+		elif [[ "$space_unit" == "kb" && "$SCALE" == "scale_binary" ]]; then
+			usage_space=$((1024*$usage_space))
+			quota_space=$((1024*$quota_space))
+		fi
+		usage_bytes=$($SCALE $usage_space)
+		quota_bytes=$($SCALE $quota_space)
+		usage_files=$(scale $usage_files)
+		quota_files=$(scale $quota_files)
+
+		printf "%40s %20s %20s\n" "$fs ($quotatype $who)" "$usage_bytes/$quota_bytes" "$usage_files/$quota_files"
+	fi
+}
+
+mount | grep "on /home type lustre" &>/dev/null
+if [[ $? -eq 0 ]]; then HOME_TYPE=lustre; fi
+mount | grep "on /home type nfs" &>/dev/null
+if [[ $? -eq 0 ]]; then HOME_TYPE=nfs; fi
+function find_and_report_usage {
+	who=$1
+	fs=$2
+
+	fs_name=$fs
+#	fs_name=${fs:1}      # remove leading /
+#	fs_name=${fs_name^}  # capitalize first letter
+	if [[ "$QUOTA_IN_FILES" == 1 ]]; then
+		quota_type="user"
+		[[ "$fs" == "/project" ]] && quota_type="group"
+		data=($(get_quota_info_from_files $who $fs $quota_type))
+		if [[ "$data" == "QUOTA_FILE_NOT_FOUND" ]]; then
+			echo "NOT AVAILABLE: Quota-information on ${CC_CLUSTER^} is updated ${QUOTA_UPDATE_INTERVAL}. Please check again later."
+		else
+			report_data $who $fs_name $quota_type ${data[1]} ${data[2]} ${data[6]} ${data[7]} kb
+		fi
+	else
+		if [[ "$fs" == "/home" && "$HOME_TYPE" == "nfs" ]]; then
+			data=($(get_nfs_info $fs))
+			report_data $who $fs_name user ${data[0]} ${data[1]} ${data[2]} ${data[3]} b
+		else
+			project_info=($(get_projectinfo $fs/$who))
+			if [[ ${project_info[1]} == "P" ]]; then
+				quota_type="project"
+				pid=${project_info[0]}
+				data=($(get_lustre_project_info $pid $fs))
+			elif [[ "$fs" == "/home" || "$fs" == "/scratch" ]]; then
+				quota_type="user"
+				data=($(get_lustre_user_info $who $fs))
+			else
+				quota_type="group"
+				data=($(get_lustre_group_info $who $fs))
+			fi
+			report_data $who $fs_name $quota_type ${data[0]} ${data[1]} ${data[2]} ${data[3]} kb
+		fi
+	fi
+}
+
+declare -a breakdowns
+printf "%40s %20s %20s\n" "Description" "Space" "# of files"
+if [[ "$ARG_ALL" == 1 || "$ARG_HOME" == 1 ]]; then
+	find_and_report_usage $USER "/home"
+	fs="home"
+	if [[ -f "/${fs}/.duc_databases/${USER}.sqlite" ]]; then
+		breakdowns+=("diskusage_explorer /${fs}/${USER} \t (Last update: $(stat --format "%y" /${fs}/.duc_databases/${USER}.sqlite | awk -F '.' '{print $1}'))")
+	fi
+fi
+
+if [[ "$ARG_ALL" == 1 || "$ARG_SCRATCH" == 1 ]]; then
+	if [[ -d "/scratch" ]]; then
+		find_and_report_usage $USER "/scratch" 
+	fi
+	fs="scratch"
+	if [[ -f "/${fs}/.duc_databases/${USER}.sqlite" ]]; then
+		breakdowns+=("diskusage_explorer /${fs}/${USER} \t (Last update: $(stat --format "%y" /${fs}/.duc_databases/${USER}.sqlite | awk -F '.' '{print $1}'))")
+	fi
+fi
+if [[ "$ARG_ALL" == 1 || "$ARG_PROJECT" == 1 ]]; then
+	if [[ -d "/project" ]]; then
+		if [[ "$REPORT_USER_QUOTA_ON_PROJECT" == "1" ]]; then
+			find_and_report_usage $USER /project
+		fi
+		for p in $(get_projects "$SYMLINK_PATH_PROJECTS"); do
+			find_and_report_usage $p /project
+		done
+	
+		for p in $(get_projects "$SYMLINK_PATH_PROJECTS"); do
+			fs="project"
+			db="/${fs}/.duc_databases/${p}.sqlite"
+			if [[ -f "$db" ]]; then
+				breakdowns+=("diskusage_explorer /${fs}/${p} \t (Last update: $(stat --format "%y" $db | awk -F '.' '{print $1}'))")
+			fi
+			if [[ "$ARG_PER_USER" == "1" ]]; then
+		                if [[ -f "/project/.stats/${p}.json" ]]; then
+					lastupdate=$(stat --format "%y" /project/.stats/${p}.json | awk -F '.' '{print $1}')
+					echo
+					echo "Breakdown for project $p (Last update: $lastupdate)"
+					diskusage_rbh project $p $ARG_ALL_USERS
+					echo
+				fi
+			fi
+		done
+	fi
+fi
+if [[ "$ARG_ALL" == 1 || "$ARG_NEARLINE" == 1 ]]; then
+	if [[ -d "/nearline" ]]; then
+		if [[ "$REPORT_NEARLINE_QUOTA" == 1 ]]; then
+	                for p in $(get_projects "nearline"); do
+	                        find_and_report_usage $p /nearline
+	                done
+		fi
+		for p in $(get_projects "nearline"); do
+			fs="nearline"
+			db="/${fs}/.duc_databases/${p}.sqlite"
+			if [[ -f "$db" ]]; then
+				breakdowns+=("diskusage_explorer /${fs}/${p} \t (Last update: $(stat --format "%y" $db | awk -F '.' '{print $1}'))")
+			fi
+			if [[ "$ARG_PER_USER" == 1 ]]; then
+				if [[ -f "/nearline/.stats/${p}.json" ]]; then
+		                        lastupdate=$(stat --format "%y" /nearline/.stats/${p}.json | awk -F '.' '{print $1}')
+	        	                echo
+	                	        echo "Breakdown for nearline $p (Last update: $lastupdate)"
+	                        	diskusage_rbh nearline $p $ARG_ALL_USERS
+		                        echo
+				fi
+			fi
+		done
+	fi
+fi
+
+if (( ${#breakdowns[@]} )); then
+	printf "\nDisk usage can be explored using the following commands:\n"
+	for value in "${breakdowns[@]}"
+	do
+		printf "$value\n"
+	done
+fi
+
+if [[ "$ARG_ALL" == 1 || "$ARG_NEARLINE" == 1 || "$ARG_PROJECT" == 1 ]]; then
+	if [[ "$ARG_PER_USER" == 0 ]]; then
+		echo "--"
+		echo "On some clusters, a break down per user may be available by adding the option '--per_user'."
+	fi
+fi
