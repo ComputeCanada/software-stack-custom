@@ -56,7 +56,7 @@ def get_command_output(command):
     if res.returncode == 0:
         return res.stdout.strip()
     else:
-        return None
+        return ''
 
 # get list of absolute paths that are relevant to the user based on the symlinks locations
 def get_relevant_paths():
