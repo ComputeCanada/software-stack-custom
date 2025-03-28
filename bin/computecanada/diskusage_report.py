@@ -7,6 +7,7 @@ import os
 import sys
 from pathlib import Path
 from datetime import datetime
+import pwd
 
 SUPPORTED_FS_TYPES = {'lustre', 'nfs', 'gpfs'}
 
@@ -184,7 +185,8 @@ def get_quotas(paths_info, filesystems=None):
             for path, path_info in paths_info.items():
                 if path_info['filesystem'] != filesystem: continue
                 if extra_quota['quota_id'] == 'user':
-                    path_info['quotas'] += [get_quota(path_info, extra_quota['quota_type'], os.getlogin())]
+                    username = pwd.getpwuid(os.getuid())[0]
+                    path_info['quotas'] += [get_quota(path_info, extra_quota['quota_type'], username)]
                 else:
                     path_info['quotas'] += [get_quota(path_info, extra_quota['quota_type'], path_info[extra_quota['quota_id']])]
                 break
