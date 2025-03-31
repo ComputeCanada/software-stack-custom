@@ -88,10 +88,15 @@ def get_paths_info(paths, filesystems):
     for path in paths:
         path = Path(path)
         if not path.is_dir(): continue
-        path_info = {}
-        path_info['path'] = str(path.resolve())
-        path_info['user'] = path.owner()
-        path_info['group'] = path.group()
+        try:
+            path_info = {}
+            path_info['path'] = str(path.resolve())
+            path_info['user'] = path.owner()
+            path_info['group'] = path.group()
+        except:
+            print(f"Error retrieving information for {path}")
+            continue
+
         # if the symlink does not point to a filesystem that was requested, skip
         try:
             path_info['filesystem'] = [fs for fs in filesystems.keys() if fs in str(path.resolve())][0]
