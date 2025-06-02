@@ -1,0 +1,9 @@
+space_display_scale: 1024
+factor_to_bytes: 1024
+filesystems:
+  /home:
+    quota_type: user
+  /scratch:
+    quota_type: user
+  /project:
+    quota_type: project
