@@ -10,7 +10,7 @@ if [ "x$1" = "x" ]; then
 else
 	exe=$1
 	shift 1
-	if [[ $(patchelf --print-interpreter $exe) != "/cvmfs/soft.computecanada.ca/nix/var/nix/profiles/16.09/lib/ld-linux-x86-64.so.2" ]]; then
+	if [[ $(patchelf --print-interpreter $exe) != *"/cvmfs/soft.computecanada.ca/"* ]]; then
 		echo "------------------------------------------"
 		echo "This binary was not compiled on this plateform. Please run the command \"setrpaths.sh --path $exe\" to make it compatible with this plateform."
 		echo "Cet exécutable n'a pas été compilé sur cette plateforme. Veuillez exécuter la commande \"setrpaths.sh --path $exe\" pour le rendre compatible avec cette plateform."
