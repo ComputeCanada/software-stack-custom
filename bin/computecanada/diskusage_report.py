@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime
 import pwd
 
-SUPPORTED_FS_TYPES = {'lustre', 'nfs', 'gpfs'}
+SUPPORTED_FS_TYPES = {'lustre', 'nfs', 'gpfs', 'nfs4'}
 
 CONFIG_PATH = "/cvmfs/soft.computecanada.ca/custom/bin/computecanada/diskusage_report_configs/"
 DEFAULT_CONFIG = {
@@ -134,7 +134,7 @@ def get_quota(path_info, quota_type, quota_identity=None):
         flag = {'project': '-p', 'user': '-u', 'group': '-g'}[quota_type]
         command = f"/usr/bin/lfs quota -q {flag} {identity} {filesystem} | grep '{filesystem}' |awk '{{print $2,$3,$6,$7}}' | sed -e 's/\*//g'"
         data = get_command_output(command).split(' ')
-    elif fs_type == 'nfs':
+    elif fs_type in ['nfs', 'nfs4']:
         if quota_type == 'user':
             command = f"/usr/bin/quota --no-wrap -f {filesystem} | grep {filesystem} | awk '{{print $2,$3,$5,$6}}'"
             data = get_command_output(command).split(' ')
@@ -166,7 +166,7 @@ def get_quota(path_info, quota_type, quota_identity=None):
         quota_info = {}
         quota_info['quota_type'] = quota_type
         quota_info['identity'] = identity
-        quota_info['identity_name'] = path_info['user'] if quota_type == 'user' else quota_identity or path_info['group']
+        quota_info['identity_name'] = pwd.getpwuid(os.getuid())[0] if quota_type == 'user' else quota_identity or path_info['group']
         quota_info['space_used_raw'] = int(data[0].replace('*',''))
         quota_info['space_quota_raw'] = int(data[1].replace('*',''))
         quota_info['file_used'] = int(data[2].replace('*',''))
