@@ -214,7 +214,7 @@ def sizeof_fmt(num, suffix="B", scale=1024, units=None):
 def report_quotas(paths_info):
     header = ["Description", "Space", "# of files"]
     has_explorer = False
-    print(f"{header[0]:>40} {header[1]:>20} {header[2]:>20}")
+    print(f"{header[0]:>39} {header[1]:>20} {header[2]:>18}")
     for fs in cfg['filesystems'].keys():
         space_display_scale = cfg['filesystems'][fs].get('space_display_scale', cfg.get('space_display_scale', 1024))
         get_quotas(paths_info, [fs])
@@ -231,7 +231,7 @@ def report_quotas(paths_info):
                     description = f"{path_info['filesystem']} ({quota_type} {quota_info['identity_name']})"
                     space = f"{sizeof_fmt(quota_info['space_used_bytes'], scale=space_display_scale)}/{sizeof_fmt(quota_info['space_quota_bytes'], scale=space_display_scale)}"
                     files = f"{sizeof_fmt(quota_info['file_used'], suffix='', scale=1000)}/{sizeof_fmt(quota_info['file_quota'], suffix='', scale=1000)}"
-                    print(f"{description:>40} {space:>20} {files:>20}")
+                    print(f"{description:>39} {space:>20} {files:>18}")
 
         # display breakdowns per user if requested
         for path, path_info in paths_info.items():
@@ -264,7 +264,8 @@ def add_explorer_commands(paths_info, filesystem):
             if os.path.isfile(db_path):
                 timestamp = Path(db_path).stat().st_mtime
                 m_time = datetime.fromtimestamp(timestamp)
-                path_info['explorer_command'] = f"diskusage_explorer {filesystem}/{path_info['group']} \t (Last update: {m_time:%Y-%m-%d %H:%M:%S})"
+                path_to_explore = f"{filesystem}/{path_info['group']}"
+                path_info['explorer_command'] = f"diskusage_explorer {path_to_explore:24}  # Last update: {m_time:%Y-%m-%d %H:%M:%S}"
                 has_explorer = True
     return has_explorer
 
