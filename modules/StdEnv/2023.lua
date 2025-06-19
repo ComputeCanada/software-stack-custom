@@ -31,8 +31,14 @@ load("openmpi")
 load("flexiblas")
 local cpu_vendor_id = os.getenv("RSNT_CPU_VENDOR_ID")
 if cpu_vendor_id == "amd" then
-	load("blis")
-	setenv("FLEXIBLAS", "blis")
+	if (arch == "avx512") then
+		load("aocl-blas")
+		load("aocl-lapack")
+		setenv("FLEXIBLAS", "aocl")
+	else
+		load("blis")
+		setenv("FLEXIBLAS", "blis")
+	end
 else
 	load("imkl")
 end
