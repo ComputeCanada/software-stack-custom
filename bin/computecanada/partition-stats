@@ -1,4 +1,4 @@
-#!/cvmfs/soft.computecanada.ca/nix/var/nix/profiles/ruby-2.3.1/bin/ruby
+#!/bin/env ruby
 #----------------------------------------------------------------------------------------#
 ### Name: idle_nodes                                                                     #
 ### Version: 1.1                                                                         #
@@ -130,7 +130,7 @@ when ENV["CC_CLUSTER"] == "beluga" then
 	     name_part  = ["cpubase_bycore_b","cpularge_bycore_b","gpubase_bygpu_b" ]
 	     name_node  = ["cpubase_bynode_b","cpularge_bynode_b","gpubase_bynode_b"]
              name_label = ["Regular   "      ,"Large Mem "       ,"GPU       "      ]
-when ENV["CC_CLUSTER"] == "narval" then
+when ENV["CC_CLUSTER"] == "narval" || ENV["CC_CLUSTER"] == "rorqual" then
              name_part  = ["cpubase_bycore_b","cpularge_bycore_b","gpubase_bygpu_b" ]
              name_node  = ["cpubase_bynode_b","cpularge_bynode_b","gpubase_bynode_b"]
              name_label = ["Regular   "      ,"Large Mem "       ,"GPU       "      ]
