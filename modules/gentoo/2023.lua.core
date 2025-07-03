@@ -61,11 +61,16 @@ local user = os.getenv("USER","unknown")
 local home = os.getenv("HOME",pathJoin("/home",user))
 -- this logic is not needed in spider, avail or other modes
 if mode() == "load" or mode() == "unload" then
+	require("SitePackage")
+	local cachefile = "/cvmfs/soft.computecanada.ca/config/lmod/lmodrc/cache_" .. arch .. "_" .. cpu_vendor_id .. ".lua"
+	if arch == "avx512" and get_has_h100() == "true" then
+		cachefile = "/cvmfs/soft.computecanada.ca/config/lmod/lmodrc/cache_" .. arch .. "_2025.lua"
+	end
 	if os.getenv("RSNT_ENABLE_LMOD_CACHE") == "yes" then
-		append_path("LMOD_RC", "/cvmfs/soft.computecanada.ca/config/lmod/lmodrc/cache_" .. arch .. "_" .. cpu_vendor_id .. ".lua")
+		append_path("LMOD_RC", cachefile)
 	elseif os.getenv("RSNT_ENABLE_LMOD_CACHE") == "auto" then
 		if not os.getenv("RSNT_LOCAL_MODULEPATHS") and not posix.stat(pathJoin(home, ".local/easybuild/modules")) then 
-			append_path("LMOD_RC", "/cvmfs/soft.computecanada.ca/config/lmod/lmodrc/cache_" .. arch .. "_" .. cpu_vendor_id .. ".lua") 
+			append_path("LMOD_RC", cachefile)
 		end
 	end
 end
