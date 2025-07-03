@@ -4,16 +4,7 @@ require("os")
 load("CCconfig")
 load("gentoo/2020")
 
-local h100_clusters = {"rorqual", "nibi", "fir", "trillium", "tamia", "killarney", "vulcan"}
-local cluster = os.getenv("CC_CLUSTER")
-local has_h100 = (os.getenv("RSNT_HAS_H100") or "false") == "true"
-for index, value in ipairs(h100_clusters) do
-	if value == cluster then
-		has_h100 = true
-        end
-end
-
-if (has_h100) then
+if get_has_h100() == "true" then
 	pushenv("LMOD_ADMIN_FILE", "/cvmfs/soft.computecanada.ca/config/lmod/admin_2025.list")
 elseif (mode() == "spider") then
 	-- set by gentoo/2020 module
