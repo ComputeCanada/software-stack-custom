@@ -61,9 +61,10 @@ local user = os.getenv("USER","unknown")
 local home = os.getenv("HOME",pathJoin("/home",user))
 -- this logic is not needed in spider, avail or other modes
 if mode() == "load" or mode() == "unload" then
-	require("SitePackage")
+	require("string")
+	local has_h100 = string.match((os.getenv("RSNT_GPU_TYPES") or "") .. ",", "H100,")
 	local cachefile = "/cvmfs/soft.computecanada.ca/config/lmod/lmodrc/cache_" .. arch .. "_" .. cpu_vendor_id .. ".lua"
-	if arch == "avx512" and get_has_h100() == "true" then
+	if arch == "avx512" and has_h100 then
 		cachefile = "/cvmfs/soft.computecanada.ca/config/lmod/lmodrc/cache_" .. arch .. "_2025.lua"
 	end
 	if os.getenv("RSNT_ENABLE_LMOD_CACHE") == "yes" then

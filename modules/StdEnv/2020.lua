@@ -1,10 +1,12 @@
 add_property(   "lmod", "sticky")
 
 require("os")
+require("string")
 load("CCconfig")
 load("gentoo/2020")
 
-if get_has_h100() == "true" then
+local has_h100 = string.match((os.getenv("RSNT_GPU_TYPES") or "") .. ",", "H100,")
+if (has_h100) then
 	pushenv("LMOD_ADMIN_FILE", "/cvmfs/soft.computecanada.ca/config/lmod/admin_2025.list")
 elseif (mode() == "spider") then
 	-- set by gentoo/2020 module

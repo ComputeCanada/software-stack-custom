@@ -76,4 +76,28 @@ end
 
 prepend_path("PATH", "/cvmfs/soft.computecanada.ca/custom/bin/computecanada")
 
+--------------------------------------------------------------------------------------------------------
+-- Cluster to GPU mapping
+--------------------------------------------------------------------------------------------------------
+local cluster_to_gpus = {
+	[ "cedar"     ] = "P100,V100",
+	[ "graham"    ] = "V100,T4,A100,A5000",
+	[ "niagara"   ] = "",
+	[ "beluga"    ] = "V100",
+	[ "narval"    ] = "A100",
+	[ "rorqual"   ] = "H100",
+	[ "nibi"      ] = "H100",
+	[ "fir"	      ] = "H100",
+	[ "trillium"  ] = "H100",
+	[ "tamia"     ] = "H100",
+	[ "killarney" ] = "H100",
+	[ "vulcan"    ] = "H100",
+}
+
+local gpu_types = os.getenv("RSNT_GPU_TYPES") or ""
+if mode() == "load" and (not gpu_types or gpu_types == "") then
+	local cc_cluster = os.getenv("CC_CLUSTER") or "computecanada"
+	setenv("RSNT_GPU_TYPES", cluster_to_gpus[cc_cluster] or "")
+end
+
 end
