@@ -142,6 +142,10 @@ when ENV["CC_CLUSTER"] == "killarney" then
              name_part  = ["gpubase_l40s_b","gpubase_h100_b"]
              name_node  = ["-","-"]
              name_label = ["L40S      "      ,"H100      "]
+when ENV["CC_CLUSTER"] == "vulcan" then
+             name_part  = ["gpubase_bygpu_b"]
+             name_node  = ["gpubase_bynode_b"]
+             name_label = ["GPU       "]
 
 
 else # For testing purposes
