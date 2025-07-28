@@ -19,4 +19,4 @@ if slurm_tmpdir and slurm_job_id then
 	end
 	execute {cmd="/cvmfs/soft.computecanada.ca/config/jupyterhub_node/scripts/jp_app_launcher_templater.py", modeA={"load"}}
 end
-setenv('JUPYTER_REMOTE_DESKTOP_ENDPOINTS', 'mate,paraview,matlab,fluent,workbench,cfx5,mapdl,starccm,starccm-mixed,comsol,ansysedt,mujoco,octave,qgis,vmd')
+setenv('JUPYTER_REMOTE_DESKTOP_ENDPOINTS', 'mate,paraview,matlab,fluent,workbench,cfx5,mapdl,starccm,starccm-mixed,comsol,ansysedt,mujoco,octave,qgis,vmd,nsys')
