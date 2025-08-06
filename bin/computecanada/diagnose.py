@@ -4,6 +4,19 @@ import sys
 import argparse
 import subprocess
 
+# default values on most clusters
+CONF = {
+    'slurm_bin_dir': '/opt/software/slurm/bin'
+}
+def cluster_customize():
+    cluster = os.environ.get('CC_CLUSTER', 'computecanada')
+    if cluster == 'killarney':
+        CONF['slurm_bin_dir'] = '/cm/shared/apps/slurm/current/bin'
+    if cluster == 'vulcan':
+        CONF['slurm_bin_dir'] = '/usr/bin'
+    if cluster in ['tamia', 'niagara', 'trillium']:
+        CONF['slurm_bin_dir'] = '/opt/slurm/bin'
+
 def fatal(message: str, exitcode=1):
     print(f'ERROR: {message}',file=sys.stderr)
     exit(exitcode)
@@ -48,7 +61,7 @@ def create_argparser():
 def job_script(args):
     if args.job_id:
         try:
-            code, output, error = run_command(f"scontrol write batch_script {args.job_id} -")
+            code, output, error = run_command(f"{CONF['slurm_bin_dir']}/scontrol write batch_script {args.job_id} -")
             fatal_assert(code, f"Error showing job {args.job_id}, is it owned by user {args.username} ?\n{error}")
             print(f"=======\n{output}\n=======")
         except Exception as e:
@@ -59,6 +72,7 @@ def main():
 
     # get current username
     args.username = os.getlogin()
+    cluster_customize()
 
     args.func(args)
 
