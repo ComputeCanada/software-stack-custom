@@ -1,0 +1,69 @@
+#!/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr/bin/python
+import os
+import sys
+import argparse
+import subprocess
+
+def fatal(message: str, exitcode=1):
+    print(f'ERROR: {message}',file=sys.stderr)
+    exit(exitcode)
+
+def fatal_assert(condition: bool, message: str, exitcode=1):
+    if not condition:
+        fatal(message, exitcode)
+
+def run_command(command: str, args: list = []) -> bool:
+    try:
+        args_str = ' '.join(args)
+        result = subprocess.run([f'{command} {args_str}'], shell=True, text=True, timeout=30, capture_output=True)
+    except subprocess.TimeoutExpired:
+        fatal(f"Command timeout: {command}", 201)
+    if result.returncode == 0:
+        return True, result.stdout, result.stderr
+    else:
+        return False, result.stdout, result.stderr
+
+def validate_positive_number(val: str):
+    if val is not str:
+        val = str(val)
+    fatal_assert(val.isdigit() and int(val) >= 0, f"Invalid value: {val}")
+    return int(val)
+
+def create_argparser():
+    class HelpFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
+        """ Dummy class for RawDescription and ArgumentDefault formatter """
+
+    description = "diagnose: diagnostic script for various problems."
+    epilog = ""
+
+    parser = argparse.ArgumentParser(prog="diagnose", formatter_class=HelpFormatter, description=description, epilog=epilog)
+    subparsers = parser.add_subparsers(dest='action', required=False, title='subcommands')
+
+    parser_job_script = subparsers.add_parser('job_script', help='Show job script')
+    parser_job_script.add_argument('job_id', default=None, type=validate_positive_number, help='Job ID for which to show the job')
+    parser_job_script.set_defaults(func=job_script)
+
+    return parser
+
+def job_script(args):
+    if args.job_id:
+        try:
+            code, output, error = run_command(f"scontrol write batch_script {args.job_id} -")
+            fatal_assert(code, f"Error showing job {args.job_id}, is it owned by user {args.username} ?\n{error}")
+            print(f"=======\n{output}\n=======")
+        except Exception as e:
+            fatal(f"Unknown error: {e}")
+
+def main():
+    args = create_argparser().parse_args()
+
+    # get current username
+    args.username = os.getlogin()
+
+    args.func(args)
+
+    exit(0)
+
+if __name__ == "__main__":
+    main()
+
