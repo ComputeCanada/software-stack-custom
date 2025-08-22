@@ -1,0 +1,65 @@
+#!/usr/bin/env zsh
+# modified from the original nibi-only version 2025-08-22 FMcC
+
+target_path=${1-.}
+if [[ ! -d $target_path ]]; then
+    echo $0: $target_path is not a directory >&2
+    exit 1
+fi
+
+pushd $target_path || exit 1
+if [[ ! -d .snapshot ]]; then
+    echo $0: snapshots are not available on this filesystem >&2
+    exit 2
+fi
+target_contents=((*|.*)(N))
+popd
+
+snapshots=($target_path/.snapshot/backup_*(NOn))
+if [[ $#snapshots -eq 0 ]]; then
+    echo $0: no snapshots are available yet for this directory >&2
+    exit 2
+fi
+
+missing_found=()
+latest=0
+oldest=$(date +%s)
+loop=0
+for snap_dir in $snapshots[@]; do
+
+    echo -n "Searching snapshots $(( 100 * ++loop / $#snapshots ))% (${loop}/${#snapshots})\r"
+    snap_time="$(date +%s --date="$(echo $snap_dir | sed -E 's/^.*backup_([0-9]{4}-[0-9]{2}-[0-9]{2})_([0-9]{2})_([0-9]{2})_([0-9]{2})_(.*)/\1 \2:\3:\4 \5/')")"
+    if (( snap_time > latest )); then
+        latest=$snap_time
+    fi
+    if (( snap_time < oldest )); then
+        oldest=$snap_time
+    fi
+    pushd $snap_dir
+    snapshot_contents=((*|.*)(N))
+    popd
+    missing=(${snapshot_contents:|target_contents}) # remove what's in the original
+    missing=(${missing:|missing_found}) # remove what's already been found
+    if [[ $#missing -gt 0 ]]; then
+      if [[ $#missing_found -eq 0 ]]; then
+	  echo  "Deleted files found in snapshots:"
+      fi
+      for m in $missing; do
+	  echo ${(q)snap_dir}/${(q)m}
+      done
+      missing_found+=($missing)
+    fi
+done
+if [[ $#missing_found -eq 0 ]]; then
+    echo "No deleted files found in snapshots"
+fi
+logger --tag oops user $USER path $(realpath $target_path) found $#missing_found
+now=$(date +%s)
+if (( now - latest < 50 )); then
+    latest_diff="$(( now - latest )) sec"
+else
+    latest_diff="$(( (now - latest + 30) / 60 )) min"
+fi
+oldest_diff="$(( (now - oldest + 43200) / 86400 )) days"
+echo Files created less than $latest_diff ago "($(date --rfc-3339=seconds --date=@$latest))" are not yet backed up
+echo Files deleted more than $oldest_diff ago "($(date --rfc-3339=seconds --date=@$oldest))" please submit a help ticket
