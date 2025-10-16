@@ -289,25 +289,29 @@ def deep_update_dict(dict1, dict2):
             dict1[k] = v
 
 if __name__ == "__main__":
-    config_file = os.getenv('DISKUSAGE_REPORT_CONFIG_FILE', os.path.join(CONFIG_PATH, f"{os.getenv('CC_CLUSTER')}.yaml"))
-    config_file = Path(config_file)
-    if os.path.isfile(config_file.resolve()):
-        import yaml
-        with open(config_file) as f:
-            deep_update_dict(cfg, yaml.load(f, Loader=yaml.FullLoader))
+    try:
+        config_file = os.getenv('DISKUSAGE_REPORT_CONFIG_FILE', os.path.join(CONFIG_PATH, f"{os.getenv('CC_CLUSTER')}.yaml"))
+        config_file = Path(config_file)
+        if os.path.isfile(config_file.resolve()):
+            import yaml
+            with open(config_file) as f:
+                deep_update_dict(cfg, yaml.load(f, Loader=yaml.FullLoader))
 
-    if any([args.scratch, args.nearline, args.project, args.home]):
-        if not args.home: cfg['filesystems'].pop('/home', None)
-        if not args.scratch: cfg['filesystems'].pop('/scratch', None)
-        if not args.project: cfg['filesystems'].pop('/project', None)
-        if not args.nearline: cfg['filesystems'].pop('/nearline', None)
+        if any([args.scratch, args.nearline, args.project, args.home]):
+            if not args.home: cfg['filesystems'].pop('/home', None)
+            if not args.scratch: cfg['filesystems'].pop('/scratch', None)
+            if not args.project: cfg['filesystems'].pop('/project', None)
+            if not args.nearline: cfg['filesystems'].pop('/nearline', None)
 
-    relevant_paths = get_relevant_paths()
-    network_filesystems = get_network_filesystems()
-    paths_info = get_paths_info(relevant_paths, network_filesystems)
-    report_quotas(paths_info)
+        relevant_paths = get_relevant_paths()
+        network_filesystems = get_network_filesystems()
+        paths_info = get_paths_info(relevant_paths, network_filesystems)
+        report_quotas(paths_info)
 
-    if not args.per_user and any([x in cfg['filesystems'].keys() for x in ['/project', '/nearline']]):
-        print("--")
-        print("On some clusters, a break down per user may be available by adding the option '--per_user'.")
+        if not args.per_user and any([x in cfg['filesystems'].keys() for x in ['/project', '/nearline']]):
+            print("--")
+            print("On some clusters, a break down per user may be available by adding the option '--per_user'.")
+
+    except KeyboardInterrupt:
+        sys.exit(130)
 
