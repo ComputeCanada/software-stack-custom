@@ -6,7 +6,10 @@ import subprocess
 
 # default values on most clusters
 CONF = {
-    'slurm_bin_dir': '/opt/software/slurm/bin'
+    'slurm_bin_dir': '/opt/software/slurm/bin',
+    'equals': "=======",
+    'ospath': "/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr",
+    'max_lines': 500
 }
 def cluster_customize():
     cluster = os.environ.get('CC_CLUSTER', 'computecanada')
@@ -68,6 +71,10 @@ def create_argparser():
     parser_inspect.add_argument('path', default=None, type=validate_path, help='Path to inspect')
     parser_inspect.set_defaults(func=inspect)
 
+    parser_show = subparsers.add_parser('show', help='Show path content')
+    parser_show.add_argument('path', default=None, type=validate_path, help='Path to show')
+    parser_show.set_defaults(func=show)
+
     return parser
 
 def job_script(args):
@@ -75,28 +82,56 @@ def job_script(args):
         try:
             code, output, error = run_command(f"{CONF['slurm_bin_dir']}/scontrol write batch_script {args.job_id} -")
             fatal_assert(code, f"Error showing job {args.job_id}, is it owned by user {args.username} ?\n{error}")
-            print(f"=======\n{output}\n=======")
+            print(f"{CONF['equals']}\n{output}\n{CONF['equals']}")
         except Exception as e:
             fatal(f"Unknown error: {e}")
 
 def inspect(args):
-    equals = "======="
-    ospath = "/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr"
     if args.path:
         path = args.path
         try:
-            commands = [f"{ospath}/bin/ls -ld", f"{ospath}/bin/getfacl", f"{ospath}/bin/file"]
+            commands = [f"{CONF['ospath']}/bin/ls -ld", f"{CONF['ospath']}/bin/getfacl", f"{CONF['ospath']}/bin/file"]
 
-            code, output, error = run_command(f"{ospath}/bin/file {path}")
+            code, output, error = run_command(f"{CONF['ospath']}/bin/file {path}")
             if code and 'ELF' in output and 'executable' in output:
-                commands += [f"{ospath}/bin/patchelf --print-interpreter"]
+                commands += [f"{CONF['ospath']}/bin/patchelf --print-interpreter"]
             if code and 'ELF' in output:
-                commands += [f"{ospath}/bin/patchelf --print-rpath", f"{ospath}/bin/ldd"]
+                commands += [f"{CONF['ospath']}/bin/patchelf --print-rpath", f"{CONF['ospath']}/bin/ldd"]
 
             for command in [f"{x} {path}" for x in commands]:
                 code, output, error = run_command(command)
                 fatal_assert(code, f"Error running {command}, \n{error}")
-                print(f"{equals}\n{command}\n{output}\n{equals}")
+                print(f"{CONF['equals']}\n{command}\n{output}\n{CONF['equals']}")
+
+        except Exception as e:
+            fatal(f"Unknown error: {e}")
+
+def show(args):
+    if args.path:
+        path = args.path
+        try:
+            if os.path.isdir(path):
+                cmd = f"{CONF['ospath']}/bin/ls -lh {path}"
+                code, output, error = run_command(cmd)
+                fatal_assert(code, f"Unknown error running {cmd}: {code}\n{error}")
+                print(f"{cmd}:\n{output}")
+            else:
+                cmd = f"{CONF['ospath']}/bin/file {path}"
+                code, output, error = run_command(cmd)
+                fatal_assert(code, f"Unknown error running {cmd}: {code}\n{error}")
+                if 'text' in output:
+                    cmd = f"{CONF['ospath']}/bin/wc -l {path}"
+                    code, output, error = run_command(cmd)
+                    fatal_assert(code, f"Unknown error running {cmd}: {code}\n{error}")
+                    num_lines = int(output.split(' ')[0])
+                    if num_lines > CONF['max_lines']:
+                        print(f"File {path} has more than {CONF['max_lines']} lines ({num_lines}), displaying only the first {CONF['max_lines']}")
+                    cmd = f"{CONF['ospath']}/bin/head -n {CONF['max_lines']} {path}"
+                    code, output, error = run_command(cmd)
+                    fatal_assert(code, f"Unknown error running {cmd}: {code}\n{error}")
+                    print(f"{cmd}:\n{CONF['equals']}\n{output}\n{CONF['equals']}")
+                else:
+                    print(f"Can't show file {path}, not a text file:\n{output}")
 
         except Exception as e:
             fatal(f"Unknown error: {e}")
