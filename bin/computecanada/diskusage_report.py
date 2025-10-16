@@ -87,8 +87,8 @@ def get_paths_info(paths, filesystems):
     paths_info = {}
     for path in paths:
         path = Path(path)
-        if not path.is_dir(): continue
         try:
+            if not path.is_dir(): continue
             path_info = {}
             path_info['path'] = str(path.resolve())
             path_info['user'] = path.owner()
