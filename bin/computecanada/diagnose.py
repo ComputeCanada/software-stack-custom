@@ -75,6 +75,9 @@ def create_argparser():
     parser_show.add_argument('path', default=None, type=validate_path, help='Path to show')
     parser_show.set_defaults(func=show)
 
+    parser_env = subparsers.add_parser('env', help='Show environment variables')
+    parser_env.set_defaults(func=env)
+
     return parser
 
 def job_script(args):
@@ -135,6 +138,11 @@ def show(args):
 
         except Exception as e:
             fatal(f"Unknown error: {e}")
+
+def env(args):
+    env = os.environ
+    for k in sorted(env.keys()):
+        print(f"{k}: {env[k]}")
 
 def main():
     args = create_argparser().parse_args()
