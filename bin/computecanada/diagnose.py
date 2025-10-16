@@ -42,6 +42,14 @@ def validate_positive_number(val: str):
     fatal_assert(val.isdigit() and int(val) >= 0, f"Invalid value: {val}")
     return int(val)
 
+def validate_path(val: str):
+    fatal_assert(os.path.exists(val), f"Path {val} does not exist")
+    try:
+        statinfo = os.stat(val)
+    except:
+        fatal_assert(False, f"Could not retrieve stat info for path {val}")
+    return val
+
 def create_argparser():
     class HelpFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
         """ Dummy class for RawDescription and ArgumentDefault formatter """
@@ -56,6 +64,10 @@ def create_argparser():
     parser_job_script.add_argument('job_id', default=None, type=validate_positive_number, help='Job ID for which to show the job')
     parser_job_script.set_defaults(func=job_script)
 
+    parser_inspect = subparsers.add_parser('inspect', help='Inspect file metadata')
+    parser_inspect.add_argument('path', default=None, type=validate_path, help='Path to inspect')
+    parser_inspect.set_defaults(func=inspect)
+
     return parser
 
 def job_script(args):
@@ -64,6 +76,28 @@ def job_script(args):
             code, output, error = run_command(f"{CONF['slurm_bin_dir']}/scontrol write batch_script {args.job_id} -")
             fatal_assert(code, f"Error showing job {args.job_id}, is it owned by user {args.username} ?\n{error}")
             print(f"=======\n{output}\n=======")
+        except Exception as e:
+            fatal(f"Unknown error: {e}")
+
+def inspect(args):
+    equals = "======="
+    ospath = "/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr"
+    if args.path:
+        path = args.path
+        try:
+            commands = [f"{ospath}/bin/ls -ld", f"{ospath}/bin/getfacl", f"{ospath}/bin/file"]
+
+            code, output, error = run_command(f"{ospath}/bin/file {path}")
+            if code and 'ELF' in output and 'executable' in output:
+                commands += [f"{ospath}/bin/patchelf --print-interpreter"]
+            if code and 'ELF' in output:
+                commands += [f"{ospath}/bin/patchelf --print-rpath", f"{ospath}/bin/ldd"]
+
+            for command in [f"{x} {path}" for x in commands]:
+                code, output, error = run_command(command)
+                fatal_assert(code, f"Error running {command}, \n{error}")
+                print(f"{equals}\n{command}\n{output}\n{equals}")
+
         except Exception as e:
             fatal(f"Unknown error: {e}")
 
