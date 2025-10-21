@@ -1,4 +1,4 @@
 #!/bin/sh
 module --force purge
 module load gentoo apptainer
-apptainer exec -B/cvmfs /cvmfs/soft.computecanada.ca/custom/software/centos6.sif $1
+apptainer exec -B/cvmfs_ceph/soft.computecanada.ca/custom:/cvmfs/soft.computecanada.ca/custom /cvmfs_ceph/soft.computecanada.ca/custom/software/centos6.sif $1
