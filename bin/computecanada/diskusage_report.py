@@ -167,10 +167,10 @@ def get_quota(path_info, quota_type, quota_identity=None):
         quota_info['quota_type'] = quota_type
         quota_info['identity'] = identity
         quota_info['identity_name'] = pwd.getpwuid(os.getuid())[0] if quota_type == 'user' else quota_identity or path_info['group']
-        quota_info['space_used_raw'] = int(data[0].replace('*',''))
-        quota_info['space_quota_raw'] = int(data[1].replace('*',''))
-        quota_info['file_used'] = int(data[2].replace('*',''))
-        quota_info['file_quota'] = int(data[3].replace('*',''))
+        quota_info['space_used_raw'] = int(data[0].replace('*','').replace('[','').replace(']',''))
+        quota_info['space_quota_raw'] = int(data[1].replace('*','').replace('[','').replace(']',''))
+        quota_info['file_used'] = int(data[2].replace('*','').replace('[','').replace(']',''))
+        quota_info['file_quota'] = int(data[3].replace('*','').replace('[','').replace(']',''))
         quota_info['space_used_bytes'] = quota_info['space_used_raw'] * int(cfg['filesystems'][filesystem].get('factor_to_bytes', cfg.get('factor_to_bytes', 1024)))
         quota_info['space_quota_bytes'] = quota_info['space_quota_raw'] * int(cfg['filesystems'][filesystem].get('factor_to_bytes', cfg.get('factor_to_bytes', 1024)))
         return quota_info
