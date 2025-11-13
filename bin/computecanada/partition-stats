@@ -1,4 +1,4 @@
-#!/cvmfs/soft.computecanada.ca/nix/var/nix/profiles/ruby-2.3.1/bin/ruby
+#!/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr/bin/ruby31
 #----------------------------------------------------------------------------------------#
 ### Name: idle_nodes                                                                     #
 ### Version: 1.1                                                                         #
