@@ -113,24 +113,20 @@ my_verbose_ouput += sprintf("%20s: %14s: %4s, %14s: %4s, %14s: %4s\n", "Totals",
 ###
 ###  Start of Kamil's section generating the table data
 
-# ntb = number of diffrent classiifcations of walltime
-ntb=6
+# ntb = number of different classifications of walltime
+ntb=5
 
 # The appopreat variable for the apporpreat cluster
 case
-when ENV["CC_CLUSTER"] == "cedar" then
-	     name_part  = ["cpubase_bycore_b","cpularge_bycore_b","gpubase_bygpu_b","gpularge_bygpu_b" ]
-	     name_node  = ["cpubase_bynode_b","cpularge_bynode_b","gpubase_bynode_b","gpularge_bynode_b"]
-             name_label = ["Regular   "      ,"Large Mem "       ,"GPU       "      ,"GPU Large "       ]
-when ENV["CC_CLUSTER"] == "graham" then
-	     name_part  = ["cpubase_bycore_b","cpularge_bycore_b","gpubase_bygpu_b" ]
-	     name_node  = ["cpubase_bynode_b","cpularge_bynode_b","gpubase_bynode_b"]
-             name_label = ["Regular   "      ,"Large Mem "       ,"GPU       "      ]
-when ENV["CC_CLUSTER"] == "beluga" then
-	     name_part  = ["cpubase_bycore_b","cpularge_bycore_b","gpubase_bygpu_b" ]
-	     name_node  = ["cpubase_bynode_b","cpularge_bynode_b","gpubase_bynode_b"]
+when ENV["CC_CLUSTER"] == "fir" then
+             name_part  = ["cpubase_bycore_b","cpularge_bycore_b","gpubase_bygpu_b" ]
+             name_node  = ["cpubase_bynode_b","cpularge_bynode_b","gpubase_bynode_b"]
              name_label = ["Regular   "      ,"Large Mem "       ,"GPU       "      ]
 when ENV["CC_CLUSTER"] == "narval" || ENV["CC_CLUSTER"] == "rorqual" then
+             name_part  = ["cpubase_bycore_b","cpularge_bycore_b","gpubase_bygpu_b" ]
+             name_node  = ["cpubase_bynode_b","cpularge_bynode_b","gpubase_bynode_b"]
+             name_label = ["Regular   "      ,"Large Mem "       ,"GPU       "      ]
+when ENV["CC_CLUSTER"] == "nibi" then
              name_part  = ["cpubase_bycore_b","cpularge_bycore_b","gpubase_bygpu_b" ]
              name_node  = ["cpubase_bynode_b","cpularge_bynode_b","gpubase_bynode_b"]
              name_label = ["Regular   "      ,"Large Mem "       ,"GPU       "      ]
@@ -146,8 +142,6 @@ when ENV["CC_CLUSTER"] == "vulcan" then
              name_part  = ["gpubase_bygpu_b"]
              name_node  = ["gpubase_bynode_b"]
              name_label = ["GPU       "]
-
-
 else # For testing purposes
 	   puts "This cluster is not currently supported by this script"
 	   exit
@@ -176,7 +170,7 @@ tableq_output=Array.new([name_part.size, name_node.size].max).each_with_index.ma
    name_label[i] + "| "+ Array.new(ntb,["-","-"]).each_with_index.map{|ee,ii|
 	ee[0]=pendings_hash[table_node[i][ii].to_s].length.to_s if (table_node.size > i) && table_node[i][ii]
         ee[1]=pendings_hash[table_part[i][ii].to_s].length.to_s if (table_part.size > i) && table_node[i][ii]
-	ee[0].rjust(4) + ":" + ee[1].ljust(4)
+	ee[0].rjust(5) + ":" + ee[1].ljust(5)
    }.join("|") + "|"
 }.join("\n") + "\n"
 
@@ -185,7 +179,7 @@ tabler_output=Array.new([name_part.size, name_node.size].max).each_with_index.ma
    name_label[i] + "| "+ Array.new(ntb,["-","-"]).each_with_index.map{|ee,ii|
       ee[0]=actives_hash[table_node[i][ii].to_s].length.to_s if (table_node.size > i) && table_node[i][ii]
       ee[1]=actives_hash[table_part[i][ii].to_s].length.to_s if (table_part.size > i) && table_node[i][ii]
-      ee[0].rjust(4) + ":" + ee[1].ljust(4)
+      ee[0].rjust(5) + ":" + ee[1].ljust(5)
    }.join("|") + "|"
 }.join("\n") + "\n"
 
@@ -194,7 +188,7 @@ tablei_output=Array.new([name_part.size, name_node.size].max).each_with_index.ma
    name_label[i] + "| "+ Array.new(ntb,["-","-"]).each_with_index.map{|ee,ii|
       ee[0]=idles_hash[table_node[i][ii].to_s].length.to_s if (table_node.size > i) && table_node[i][ii] && idles_hash[table_node[i][ii]] && idles_hash[table_node[i][ii]].respond_to?(:length)
       ee[1]=idles_hash[table_part[i][ii].to_s].length.to_s if (table_part.size > i) && table_node[i][ii] && idles_hash[table_part[i][ii]] && idles_hash[table_part[i][ii]].respond_to?(:length)
-      ee[0].rjust(4) + ":" + ee[1].ljust(4)
+      ee[0].rjust(5) + ":" + ee[1].ljust(5)
    }.join("|") + "|"
 }.join("\n") + "\n"
 
@@ -203,7 +197,7 @@ tablet_output=Array.new([name_part.size, name_node.size].max).each_with_index.ma
    name_label[i] + "| "+ Array.new(ntb,["-","-"]).each_with_index.map{|ee,ii|
       ee[0]=nodes_hash[table_node[i][ii].to_s].length.to_s if (table_node.size > i) && table_node[i][ii] && nodes_hash[table_node[i][ii]] && nodes_hash[table_node[i][ii]].respond_to?(:length)
       ee[1]=nodes_hash[table_part[i][ii].to_s].length.to_s if (table_part.size > i) && table_node[i][ii] && nodes_hash[table_part[i][ii]] && nodes_hash[table_part[i][ii]].respond_to?(:length)
-      ee[0].rjust(4) + ":" + ee[1].ljust(4)
+      ee[0].rjust(5) + ":" + ee[1].ljust(5)
    }.join("|") + "|"
 }.join("\n") + "\n" 
 
@@ -223,7 +217,7 @@ end
 
 table_split   ="----------|-------------------------------------------------------------\n"
 table_header  ="Node type |                     Max walltime                            \n"
-table_header +="          |   3 hr   |  12 hr  |  24 hr  |  72 hr  |  168 hr |  672 hr |\n"
+table_header +="          |     3 hr   |   12 hr   |   24 hr   |   72 hr   |   168 hr  |\n"
 q_head        ="       Number of Queued Jobs by partition Type (by node:by core)        \n"
 r_head        ="      Number of Running Jobs by partition Type (by node:by core)        \n"
 i_head        ="        Number of Idle nodes by partition Type (by node:by core)        \n"
