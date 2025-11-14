@@ -1,4 +1,4 @@
-#!/bin/zsh -f
+#!/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr/bin/zsh -f
 # modified from the original nibi-only version 2025-08-22 FMcC
 # adapted by Jaime Pinto on Nov/13/2025 to Extended functionality, to
 # browse and restore previous versions, deleted or not
