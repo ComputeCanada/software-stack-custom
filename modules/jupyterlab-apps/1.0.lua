@@ -4,6 +4,8 @@ depends_on("libreqda/1")
 depends_on("rstudio-server")
 depends_on("ipython-kernel")
 depends_on("openrefine")
+depends_on("mlflow")
+depends_on("tensorboard")
 
 local posix = require "posix"
 
