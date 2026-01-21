@@ -1,4 +1,7 @@
 #!/bin/bash
+
+echo "See install_logs.sh $1 for more details online."
+
 cd /cvmfs/soft.computecanada.ca/easybuild/ebfiles_repo
 
 for r in $(find . -iname "$1*.eb"); do 
