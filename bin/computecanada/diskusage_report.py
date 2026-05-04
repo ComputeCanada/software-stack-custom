@@ -19,7 +19,14 @@ DEFAULT_CONFIG = {
         '/project': {'quota_type': 'group'},
         '/nearline': {'quota_type': 'group'},
     },
-    'symlink_paths': ['scratch', ('projects', '*'), ('nearline', '*'), ('links', '*'), ('links/projects', '*'), ('links/nearline', '*')],
+    'symlink_paths': [
+        'scratch',
+        ('projects', '*'),
+        ('nearline', '*'),
+        ('links', '*'),
+        ('links/projects', '*'),
+        ('links/nearlines', '*'),
+    ],
     'gpfs_diskusage_location': None,
 }
 cfg = DEFAULT_CONFIG
