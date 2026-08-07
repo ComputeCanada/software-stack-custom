@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import sys
+
+ORG_DEFAULT_SECONDS = 2
+OUR_DEFAULT_SECONDS = 61  # Preferred minimal interval
+DEFAULT_WATCH = '/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr/bin/watch'
+ALLOWED_SUBCOMMANDS = {
+    "sacct",
+    "squeue",
+    "sq",
+}
+
+watch_bin = os.environ.get('OVERRIDE_WATCH_BIN') or DEFAULT_WATCH
+if not os.path.exists(watch_bin):
+    print(f"Error: watch binary not found at {watch_bin}", file=sys.stderr)
+    sys.exit(1)
+
+parser = argparse.ArgumentParser(description="execute a program periodically, showing output fullscreen", add_help=False)
+parser.add_argument('-n', '--interval', type=float, default=ORG_DEFAULT_SECONDS)
+args, unknown = parser.parse_known_args()
+
+def extract_watched_command(args):
+    # Skip wrapper flags (already parsed), skip watch flags
+    for arg in args:
+        if arg[0] != '-':
+            return arg
+    return None
+
+watched_cmd = extract_watched_command(unknown)
+interval = max(OUR_DEFAULT_SECONDS, args.interval) if watched_cmd in ALLOWED_SUBCOMMANDS else args.interval
+
+os.execl(watch_bin, watch_bin, "--interval", str(interval), *unknown)
