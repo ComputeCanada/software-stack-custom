@@ -26,19 +26,30 @@ if (mode() == "spider" and (arch == "avx2" or arch == "avx512")) then
 	end
 end
 
-load("gcc")
-load("openmpi")
-load("flexiblas")
 local cpu_vendor_id = os.getenv("RSNT_CPU_VENDOR_ID")
 if cpu_vendor_id == "amd" then
 	if (arch == "avx512") then
-		load("aocl-blas")
-		load("aocl-lapack")
 		setenv("FLEXIBLAS", "aocl")
+		setenv("FLEXIBLAS64", "aocl")
 	else
-		load("blis")
 		setenv("FLEXIBLAS", "blis")
+		setenv("FLEXIBLAS64", "blis")
 	end
-else
-	load("imkl")
+end
+
+local load_default_toolchain = os.getenv("RSNT_LOAD_DEFAULT_TOOLCHAIN") or "yes"
+if load_default_toolchain == "yes" then
+	load("gcc")
+	load("openmpi")
+	load("flexiblas")
+	if cpu_vendor_id == "amd" then
+		if (arch == "avx512") then
+			load("aocl-blas")
+			load("aocl-lapack")
+		else
+			load("blis")
+		end
+	else
+		load("imkl")
+	end
 end
