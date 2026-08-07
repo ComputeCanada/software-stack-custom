@@ -1,5 +1,104 @@
-#!/usr/bin/env zsh
+#!/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr/bin/zsh -f
 # modified from the original nibi-only version 2025-08-22 FMcC
+# adapted by Jaime Pinto on Nov/13/2025 to Extended functionality, to
+# browse and restore previous versions, deleted or not
+#
+
+# --- Argument handling for help, versions, and restore -----------------------
+
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat <<EOF
+Usage: oops [path]
+       oops --versions <file>
+       oops --restore <file> <timestamp>
+       oops --help | -h
+
+Default (no options):
+    Search snapshots for files that have been deleted and can be restored.
+
+Options:
+  --versions <file>
+        List all snapshot versions of a specific file.
+        Shows timestamps and snapshot paths.
+
+  --restore <file> <timestamp>
+        Restore a file from a specific snapshot timestamp.
+        Timestamp format must match the snapshot directory suffix, e.g.:
+            2025-01-13_04_00_00_daily
+
+  --help, -h
+        Show this usage information.
+
+Examples:
+    oops /home/alice/project
+    oops --versions ~/.bash_history
+    oops --restore ~/.bash_history 2025-01-13_04_00_00_daily
+EOF
+    exit 0
+fi
+
+
+# --- Versions listing --------------------------------------------------------
+
+if [[ "$1" == "--versions" ]]; then
+    file=$2
+    if [[ -z "$file" ]]; then
+        echo "Usage: oops --versions <file>"
+        exit 1
+    fi
+
+    dir=$(dirname "$file")
+    base=$(basename "$file")
+
+    if [[ ! -d "$dir/.snapshot" ]]; then
+        echo "No snapshots available for $dir"
+        exit 1
+    fi
+
+    echo "Versions of $file found in snapshots:"
+    echo
+
+    for snap in "$dir"/.snapshot/backup_*; do
+        snapfile="$snap/$base"
+        if [[ -f "$snapfile" ]]; then
+            timestamp="${snap##*backup_}"
+            size=$(stat -c %s "$snapfile" 2>/dev/null)
+            echo "$timestamp  size=${size}B  $snapfile"
+        fi
+    done
+
+    exit 0
+fi
+
+
+# --- Restore mode ------------------------------------------------------------
+
+if [[ "$1" == "--restore" ]]; then
+    file=$2
+    timestamp=$3
+
+    if [[ -z "$file" || -z "$timestamp" ]]; then
+        echo "Usage: oops --restore <file> <timestamp>"
+        exit 1
+    fi
+
+    dir=$(dirname "$file")
+    base=$(basename "$file")
+    snap="$dir/.snapshot/backup_${timestamp}"
+
+    if [[ ! -f "$snap/$base" ]]; then
+        echo "Snapshot version does not exist: $snap/$base"
+        exit 1
+    fi
+
+    echo "Restoring $file from snapshot $timestamp"
+    cp -i "$snap/$base" "$file"
+    exit 0
+fi
+
+#
+# --- End of the custom block; normal behavior continues below ---------------
+#
 
 target_path=${1-.}
 if [[ ! -d $target_path ]]; then
