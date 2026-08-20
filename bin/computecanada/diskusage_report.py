@@ -7,6 +7,7 @@ import os
 import sys
 from pathlib import Path
 from datetime import datetime
+from colorama import Back, Style
 import pwd
 
 SUPPORTED_FS_TYPES = {'lustre', 'nfs', 'gpfs', 'nfs4'}
@@ -238,7 +239,9 @@ def report_quotas(paths_info):
                     description = f"{path_info['filesystem']} ({quota_type} {quota_info['identity_name']})"
                     space = f"{sizeof_fmt(quota_info['space_used_bytes'], scale=space_display_scale)}/{sizeof_fmt(quota_info['space_quota_bytes'], scale=space_display_scale)}"
                     files = f"{sizeof_fmt(quota_info['file_used'], suffix='', scale=1000)}/{sizeof_fmt(quota_info['file_quota'], suffix='', scale=1000)}"
-                    print(f"{description:>39} {space:>20} {files:>18}")
+                    style_space = Back.RED + Style.BRIGHT if quota_info['space_used_bytes'] >= quota_info['space_quota_bytes'] else ''
+                    style_files = Back.RED + Style.BRIGHT if quota_info['file_used'] >= quota_info['file_quota'] else ''
+                    print(f"{description:>39}", style_space + f"{space:>20}" + Style.RESET_ALL, style_files + f"{files:>18}" + Style.RESET_ALL)
 
         # display breakdowns per user if requested
         for path, path_info in paths_info.items():
