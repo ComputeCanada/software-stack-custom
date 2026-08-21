@@ -242,8 +242,8 @@ def report_quotas(paths_info, with_color):
                     description = f"{path_info['filesystem']} ({quota_type} {quota_info['identity_name']})"
                     space_usage, space_quota = quota_info['space_used_bytes'], quota_info['space_quota_bytes']
                     files_usage, files_quota = quota_info['file_used'], quota_info['file_quota']
-                    space_isoverquota = space_usage / space_quota > cfg['warning_threshold']
-                    files_isoverquota = files_usage / files_quota > cfg['warning_threshold']
+                    space_isoverquota = space_usage / (space_quota + 1) > cfg['warning_threshold']
+                    files_isoverquota = files_usage / (files_quota + 1) > cfg['warning_threshold']
                     space_style = Fore.RED + Style.BRIGHT if with_color and space_isoverquota else ''
                     files_style = Fore.RED + Style.BRIGHT if with_color and files_isoverquota else ''
                     space_marker = ' **' if space_isoverquota else ''
