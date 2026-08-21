@@ -246,10 +246,10 @@ def report_quotas(paths_info, with_color):
                     files_isoverquota = files_usage / (files_quota + 1) > cfg['warning_threshold']
                     space_style = Fore.RED + Style.BRIGHT if with_color and space_isoverquota else ''
                     files_style = Fore.RED + Style.BRIGHT if with_color and files_isoverquota else ''
-                    space_marker = ' **' if space_isoverquota else ''
-                    files_marker = ' **' if files_isoverquota else ''
-                    space_ratio = f"{sizeof_fmt(space_usage, scale=space_display_scale)}/{sizeof_fmt(space_quota, scale=space_display_scale)}{space_marker}"
-                    files_ratio = f"{sizeof_fmt(files_usage, suffix='', scale=1000)}/{sizeof_fmt(files_quota, suffix='', scale=1000)}{files_marker}"
+                    space_marker = '-> ' if space_isoverquota else ''
+                    files_marker = '-> ' if files_isoverquota else ''
+                    space_ratio = f"{space_marker}{sizeof_fmt(space_usage, scale=space_display_scale)}/{sizeof_fmt(space_quota, scale=space_display_scale)}"
+                    files_ratio = f"{files_marker}{sizeof_fmt(files_usage, suffix='', scale=1000)}/{sizeof_fmt(files_quota, suffix='', scale=1000)}"
                     print(
                         f"{description:>39}",
                         space_style + f"{space_ratio:>20}" + Style.RESET_ALL,
@@ -271,9 +271,10 @@ def report_quotas(paths_info, with_color):
                         print("\n")
 
     if any_overquota:
+        note_style = Fore.RED + Style.BRIGHT if with_color else ''
         print(
-            f"\n** Usage near or over quota",
-            f"(warning threshold at {cfg['warning_threshold']*100:.0f}% of the quota)"
+            f"\n{note_style}-> Usage near or over quota",
+            f"(warning threshold at {cfg['warning_threshold']*100:.0f}% of the quota)" + Style.RESET_ALL
         )
 
     # report breakdown commands
