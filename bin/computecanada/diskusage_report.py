@@ -223,7 +223,7 @@ def sizeof_fmt(num, suffix="B", scale=1024, units=None):
         num /= scale
     return f"{num:.0f}{units[-1]}{suffix}"
 
-def report_quotas(paths_info, with_color):
+def report_quotas(paths_info):
     any_overquota = False
     header = ["Description", "Space", "# of files"]
     has_explorer = False
@@ -246,8 +246,8 @@ def report_quotas(paths_info, with_color):
                     files_usage, files_quota = quota_info['file_used'], quota_info['file_quota']
                     space_isoverquota = space_usage / (space_quota + 1) > cfg['warning_threshold']
                     files_isoverquota = files_usage / (files_quota + 1) > cfg['warning_threshold']
-                    space_style = Fore.RED + Style.BRIGHT if with_color and space_isoverquota else ''
-                    files_style = Fore.RED + Style.BRIGHT if with_color and files_isoverquota else ''
+                    space_style = Fore.RED + Style.BRIGHT if space_isoverquota else ''
+                    files_style = Fore.RED + Style.BRIGHT if files_isoverquota else ''
                     space_marker = '-> ' if space_isoverquota else ''
                     files_marker = '-> ' if files_isoverquota else ''
                     space_ratio = f"{space_marker}{sizeof_fmt(space_usage, scale=space_display_scale)}/{sizeof_fmt(space_quota, scale=space_display_scale)}"
@@ -273,9 +273,8 @@ def report_quotas(paths_info, with_color):
                         print("\n")
 
     if any_overquota:
-        note_style = Fore.RED + Style.BRIGHT if with_color else ''
         print(
-            f"\n{note_style}-> Usage near or over quota",
+            f"\n{Fore.RED + Style.BRIGHT}-> Usage near or over quota",
             f"(warning threshold at {cfg['warning_threshold']*100:.0f}% of the quota)" + Style.RESET_ALL
         )
 
@@ -338,7 +337,7 @@ if __name__ == "__main__":
         relevant_paths = get_relevant_paths()
         network_filesystems = get_network_filesystems()
         paths_info = get_paths_info(relevant_paths, network_filesystems)
-        report_quotas(paths_info, args.color)
+        report_quotas(paths_info)
 
         if not args.per_user and any([x in cfg['filesystems'].keys() for x in ['/project', '/nearline']]):
             print("--")
