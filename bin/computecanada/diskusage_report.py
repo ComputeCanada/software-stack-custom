@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 from datetime import datetime
-from colorama import Fore, Style
+from colorama import Fore, Style, init as colorama_init
 import pwd
 
 SUPPORTED_FS_TYPES = {'lustre', 'nfs', 'gpfs', 'nfs4'}
@@ -40,8 +40,10 @@ parser.add_argument("--project", default=False, action='store_true', help="Displ
 parser.add_argument("--nearline", default=False, action='store_true', help="Display information for the nearline filesystem")
 parser.add_argument("--per_user", default=False, action='store_true', help="Display per-user breakdown if available")
 parser.add_argument("--all_users", default=False, action='store_true', help="Display information for all users of the project")
-parser.add_argument('--color', default=True, action=argparse.BooleanOptionalAction, help="Display any usage over quota in red")
+parser.add_argument('--color', default=None, action=argparse.BooleanOptionalAction, help="Display any usage over quota in red")
 args = parser.parse_args()
+
+colorama_init(strip=None if args.color is None else not args.color)
 
 def get_network_filesystems():
     network_fs = {}
