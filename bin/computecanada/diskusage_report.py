@@ -7,6 +7,7 @@ import os
 import sys
 from pathlib import Path
 from datetime import datetime
+from colorama import Fore, Style, init as colorama_init
 import pwd
 
 SUPPORTED_FS_TYPES = {'lustre', 'nfs', 'gpfs', 'nfs4'}
@@ -28,6 +29,7 @@ DEFAULT_CONFIG = {
         ('links/nearlines', '*'),
     ],
     'gpfs_diskusage_location': None,
+    'warning_threshold': 0.95,
 }
 cfg = DEFAULT_CONFIG
 
@@ -38,7 +40,10 @@ parser.add_argument("--project", default=False, action='store_true', help="Displ
 parser.add_argument("--nearline", default=False, action='store_true', help="Display information for the nearline filesystem")
 parser.add_argument("--per_user", default=False, action='store_true', help="Display per-user breakdown if available")
 parser.add_argument("--all_users", default=False, action='store_true', help="Display information for all users of the project")
+parser.add_argument('--color', default=None, action=argparse.BooleanOptionalAction, help="Display any usage over quota in red")
 args = parser.parse_args()
+
+colorama_init(strip=None if args.color is None else not args.color)
 
 def get_network_filesystems():
     network_fs = {}
@@ -219,6 +224,7 @@ def sizeof_fmt(num, suffix="B", scale=1024, units=None):
     return f"{num:.0f}{units[-1]}{suffix}"
 
 def report_quotas(paths_info):
+    any_overquota = False
     header = ["Description", "Space", "# of files"]
     has_explorer = False
     print(f"{header[0]:>39} {header[1]:>20} {header[2]:>18}")
@@ -236,9 +242,22 @@ def report_quotas(paths_info):
                         continue
                     quota_type = 'user' if path_info['filesystem'] in ('/home', '/scratch') else quota_info['quota_type']
                     description = f"{path_info['filesystem']} ({quota_type} {quota_info['identity_name']})"
-                    space = f"{sizeof_fmt(quota_info['space_used_bytes'], scale=space_display_scale)}/{sizeof_fmt(quota_info['space_quota_bytes'], scale=space_display_scale)}"
-                    files = f"{sizeof_fmt(quota_info['file_used'], suffix='', scale=1000)}/{sizeof_fmt(quota_info['file_quota'], suffix='', scale=1000)}"
-                    print(f"{description:>39} {space:>20} {files:>18}")
+                    space_usage, space_quota = quota_info['space_used_bytes'], quota_info['space_quota_bytes']
+                    files_usage, files_quota = quota_info['file_used'], quota_info['file_quota']
+                    space_isoverquota = space_usage / (space_quota + 1) > cfg['warning_threshold']
+                    files_isoverquota = files_usage / (files_quota + 1) > cfg['warning_threshold']
+                    space_style = Fore.RED + Style.BRIGHT if space_isoverquota else ''
+                    files_style = Fore.RED + Style.BRIGHT if files_isoverquota else ''
+                    space_marker = '-> ' if space_isoverquota else ''
+                    files_marker = '-> ' if files_isoverquota else ''
+                    space_ratio = f"{space_marker}{sizeof_fmt(space_usage, scale=space_display_scale)}/{sizeof_fmt(space_quota, scale=space_display_scale)}"
+                    files_ratio = f"{files_marker}{sizeof_fmt(files_usage, suffix='', scale=1000)}/{sizeof_fmt(files_quota, suffix='', scale=1000)}"
+                    print(
+                        f"{description:>39}",
+                        space_style + f"{space_ratio:>20}" + Style.RESET_ALL,
+                        files_style + f"{files_ratio:>18}" + Style.RESET_ALL
+                    )
+                    any_overquota |= space_isoverquota | files_isoverquota
 
         # display breakdowns per user if requested
         for path, path_info in paths_info.items():
@@ -253,6 +272,11 @@ def report_quotas(paths_info):
                         subprocess.run(["diskusage_rbh", fs[1:], path_info['group']] + diskusage_rbh_arg)
                         print("\n")
 
+    if any_overquota:
+        print(
+            f"\n{Fore.RED + Style.BRIGHT}-> Usage near or over quota",
+            f"(warning threshold at {cfg['warning_threshold']*100:.0f}% of the quota)" + Style.RESET_ALL
+        )
 
     # report breakdown commands
     if has_explorer:
