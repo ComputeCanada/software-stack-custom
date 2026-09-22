@@ -1,1 +1,1 @@
-module_version("gentoo/2020", "default")
+module_version("gentoo/2023", "default")
