@@ -1,0 +1,63 @@
+#!/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr/bin/python
+import os
+import re
+
+
+def time_to_seconds(time_spec: str) -> int:
+    days, hours, minutes, seconds = 0, 0, 0, 0
+
+    if re.search('-', time_spec):
+        days, hh_mm_ss = tuple(time_spec.split('-'))
+        days = int(days)
+    else:
+        hh_mm_ss = time_spec
+
+    if hh_mm_ss:
+        hh_mm_ss = hh_mm_ss.split(':')
+        while len(hh_mm_ss) < 3:
+            hh_mm_ss.append('0')
+
+        hours, minutes, seconds = tuple([int(cc) for cc in hh_mm_ss])
+
+    return ((days * 24 + hours) * 60 + minutes) * 60 + seconds
+
+
+def get_decay_conf() -> dict[str, int]:
+    decay_conf = {
+        'half_life_sec': 7 * 24 * 60 * 60,  # 7 days
+        'calc_period_sec': 5 * 60,          # 5 minutes
+    }
+
+    slurm_conf_path_to_cluster_names = {
+        '/etc/slurm/slurm.conf': [
+            'fir', 'narval', 'nibi', 'rorqual', 'tamia', 'vulcan'],
+        '/opt/slurm/etc/slurm.conf': ['trillium'],
+    }
+    slurm_conf_paths = {
+        cluster_name: sc_path
+        for sc_path, cluster_names in slurm_conf_path_to_cluster_names.items()
+        for cluster_name in cluster_names
+    }
+
+    cluster_name = os.getenv('CC_CLUSTER')
+
+    if cluster_name not in slurm_conf_paths:
+        return decay_conf
+
+    with open(slurm_conf_paths[cluster_name]) as conf_file:
+        for conf_line in conf_file:
+            if re.match('PriorityDecayHalfLife=', conf_line):
+                half_life = time_to_seconds(conf_line.strip().split('=')[1])
+                if half_life > 0:
+                    decay_conf['half_life_sec'] = half_life
+            elif re.match('PriorityCalcPeriod=', conf_line):
+                calc_period = time_to_seconds(conf_line.strip().split('=')[1])
+                if calc_period > 0:
+                    decay_conf['calc_period_sec'] = calc_period
+
+    return decay_conf
+
+
+if __name__ == '__main__':
+    decay_conf = get_decay_conf()
+    print(decay_conf)
