@@ -23,6 +23,9 @@ def time_to_seconds(time_spec: str) -> int:
 
 
 def get_decay_conf() -> dict[str, int]:
+    # Defaults documented here:
+    # - https://slurm.schedmd.com/slurm.conf.html#OPT_PriorityDecayHalfLife
+    # - https://slurm.schedmd.com/slurm.conf.html#OPT_PriorityCalcPeriod
     decay_conf = {
         'half_life_sec': 7 * 24 * 60 * 60,  # 7 days
         'calc_period_sec': 5 * 60,          # 5 minutes
@@ -58,6 +61,23 @@ def get_decay_conf() -> dict[str, int]:
     return decay_conf
 
 
-if __name__ == '__main__':
+def get_asymptotical_raw_usage():
     decay_conf = get_decay_conf()
-    print(decay_conf)
+
+    # Number of cycles = half_life_sec / calc_period_sec
+    # 0.5 = decay_factor ** Number of cycles =>
+    #     decay_factor = 0.5 ** (1 / Number of cycles)
+    decay_factor = 0.5 ** (
+        decay_conf['calc_period_sec'] / decay_conf['half_life_sec']
+    )
+
+    # RawUsage if constantly using 1 unit of resource
+    # RawUsage = RawUsage * decay_factor + calc_period_sec =>
+    #     RawUsage = calc_period_sec / (1 - decay_factor)
+    return decay_conf['calc_period_sec'] / (1.0 - decay_factor)
+
+
+if __name__ == '__main__':
+    raw_usage_factor = get_asymptotical_raw_usage()
+
+    print(f'{raw_usage_factor = }')
