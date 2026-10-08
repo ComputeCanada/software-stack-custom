@@ -1,6 +1,7 @@
 #!/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr/bin/python
 import os
 import re
+import subprocess
 
 
 def time_to_seconds(time_spec: str) -> int:
@@ -61,7 +62,7 @@ def get_decay_conf() -> dict[str, int]:
     return decay_conf
 
 
-def get_asymptotical_raw_usage():
+def get_asymptotical_raw_usage() -> float:
     decay_conf = get_decay_conf()
 
     # Number of cycles = half_life_sec / calc_period_sec
@@ -77,7 +78,20 @@ def get_asymptotical_raw_usage():
     return decay_conf['calc_period_sec'] / (1.0 - decay_factor)
 
 
+def get_comma_sep_accounts() -> str:
+    username = os.getenv('USER')
+    return subprocess.run(
+        (
+            'sacctmgr --noheader --parsable2 show user withassoc ' +
+            f'where user={username} format=Account'
+        ).split(' '),
+        capture_output=True,
+        text=True,
+    ).stdout.strip().replace('\n', ',')
+
+
 if __name__ == '__main__':
     raw_usage_factor = get_asymptotical_raw_usage()
+    accounts = get_comma_sep_accounts()
 
-    print(f'{raw_usage_factor = }')
+    print(f'{accounts = }')
