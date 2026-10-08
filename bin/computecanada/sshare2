@@ -1,4 +1,5 @@
 #!/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr/bin/python
+import json
 import os
 import re
 import subprocess
@@ -90,8 +91,17 @@ def get_comma_sep_accounts() -> str:
     ).stdout.strip().replace('\n', ',')
 
 
+def get_sshare_output(accounts: str) -> str:
+    return subprocess.run(
+        f'sshare --json -A {accounts}'.split(' '),
+        capture_output=True,
+        text=True,
+    ).stdout
+
+
 if __name__ == '__main__':
     raw_usage_factor = get_asymptotical_raw_usage()
     accounts = get_comma_sep_accounts()
+    sshare = json.loads(get_sshare_output(accounts))
 
-    print(f'{accounts = }')
+    print(sshare)
