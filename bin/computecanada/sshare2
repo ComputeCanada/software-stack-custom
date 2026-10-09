@@ -109,7 +109,7 @@ def sshare2(sshare_dict, raw_usage_factor: float, header: bool=True) -> None:
         'RawShares': ('r', 10),
         'RawUsage': ('r', 20),
         'AvgUsage': ('r', 10),
-        'LevelFS': ('r', 10),
+        'LevelFS': ('r', 14),
     }
 
     if header:
@@ -127,14 +127,14 @@ def sshare2(sshare_dict, raw_usage_factor: float, header: bool=True) -> None:
             account = share_info['name']
             raw_shares = share_info['shares']['number']
             raw_usage = share_info['usage']
-            avg_usage = int(raw_usage / raw_usage_factor)
+            avg_usage = raw_usage / raw_usage_factor
             level_fs = raw_shares / (avg_usage + 1. / raw_usage_factor)
 
             print(
                 text_just(account, *col_just['Account']),
                 text_just(str(raw_shares), *col_just['RawShares']),
                 text_just(str(raw_usage), *col_just['RawUsage']),
-                text_just(str(avg_usage), *col_just['AvgUsage']),
+                text_just(f'{avg_usage:.0f}', *col_just['AvgUsage']),
                 text_just(f'{level_fs:.6f}', *col_just['LevelFS']),
             )
 
@@ -142,13 +142,17 @@ def sshare2(sshare_dict, raw_usage_factor: float, header: bool=True) -> None:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        '-A', '--accounts',
+        help='show for these specified accounts only (comma separated list)'
+    )
+    parser.add_argument(
         '-u', '--user', default=os.getenv('USER'),
         help="show all the accounts usable by this specified user"
     )
     args = parser.parse_args()
 
-    raw_usage_factor = get_asymptotical_raw_usage()
-    accounts = get_comma_sep_accounts(args.user)
-    sshare_dict = json.loads(get_sshare_output(accounts))
+    sshare_dict = json.loads(get_sshare_output(
+        args.accounts if args.accounts else get_comma_sep_accounts(args.user)
+    ))
 
-    sshare2(sshare_dict, raw_usage_factor)
+    sshare2(sshare_dict, get_asymptotical_raw_usage())
