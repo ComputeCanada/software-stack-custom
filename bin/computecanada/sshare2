@@ -99,9 +99,49 @@ def get_sshare_output(accounts: str) -> str:
     ).stdout
 
 
+def sshare2(sshare_dict, raw_usage_factor: float, header: bool=True) -> None:
+    def text_just(text: str, just_type: str, width: int) -> str:
+        text = text[:width]
+        return text.rjust(width) if just_type == 'r' else text.ljust(width)
+
+    col_just = {
+        'Account': ('l', 20),
+        'RawShares': ('r', 10),
+        'RawUsage': ('r', 20),
+        'AvgUsage': ('r', 10),
+        'LevelFS': ('r', 10),
+    }
+
+    if header:
+        columns_str = [
+            text_just(name, *col_conf) for name, col_conf in col_just.items()
+        ]
+        print(*columns_str)
+        columns_underline = [
+            '-' * col_conf[1] for name, col_conf in col_just.items()
+        ]
+        print(*columns_underline)
+
+    for share_info in sshare_dict['shares']['shares']:
+        if share_info['parent'] == 'root':
+            account = share_info['name']
+            raw_shares = share_info['shares']['number']
+            raw_usage = share_info['usage']
+            avg_usage = raw_usage / raw_usage_factor
+            level_fs = raw_shares / (avg_usage + 1. / raw_usage_factor)
+
+            print(
+                text_just(account, *col_just['Account']),
+                text_just(str(raw_shares), *col_just['RawShares']),
+                text_just(str(raw_usage), *col_just['RawUsage']),
+                text_just(f'{avg_usage:.6f}', *col_just['AvgUsage']),
+                text_just(f'{level_fs:.6f}', *col_just['LevelFS']),
+            )
+
+
 if __name__ == '__main__':
     raw_usage_factor = get_asymptotical_raw_usage()
     accounts = get_comma_sep_accounts()
-    sshare = json.loads(get_sshare_output(accounts))
+    sshare_dict = json.loads(get_sshare_output(accounts))
 
-    print(sshare)
+    sshare2(sshare_dict, raw_usage_factor)
