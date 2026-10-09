@@ -7,6 +7,13 @@ import subprocess
 
 
 def time_to_seconds(time_spec: str) -> int:
+    """Convert Slurm time periods to a number of seconds
+
+    time_spec -- time period of this format: [d-]hh[:mm[:ss]]
+
+    Returns: a number of seconds
+    """
+
     days, hours, minutes, seconds = 0, 0, 0, 0
 
     if re.search('-', time_spec):
@@ -26,9 +33,15 @@ def time_to_seconds(time_spec: str) -> int:
 
 
 def get_decay_conf() -> dict[str, int]:
-    # Defaults documented here:
-    # - https://slurm.schedmd.com/slurm.conf.html#OPT_PriorityDecayHalfLife
-    # - https://slurm.schedmd.com/slurm.conf.html#OPT_PriorityCalcPeriod
+    """Convert Slurm PriorityDecayHalfLife and PriorityCalcPeriod to seconds
+
+    The default durations are documented here:
+    - https://slurm.schedmd.com/slurm.conf.html#OPT_PriorityDecayHalfLife
+    - https://slurm.schedmd.com/slurm.conf.html#OPT_PriorityCalcPeriod
+
+    Returns: dictionary with keys: 'half_life_sec' and 'calc_period_sec'
+    """
+
     decay_conf = {
         'half_life_sec': 7 * 24 * 60 * 60,  # 7 days
         'calc_period_sec': 5 * 60,          # 5 minutes
@@ -65,22 +78,30 @@ def get_decay_conf() -> dict[str, int]:
 
 
 def get_asymptotical_raw_usage() -> float:
-    decay_conf = get_decay_conf()
+    """Get the RawUsage if 1 share is used constantly since forever
 
-    # Number of cycles = half_life_sec / calc_period_sec
-    # 0.5 = decay_factor ** Number of cycles =>
-    #     decay_factor = 0.5 ** (1 / Number of cycles)
+    This function automatically gets the local Slurm decay configuration. Then:
+        Number of cycles = half_life_sec / calc_period_sec
+        0.5 == decay_factor ** Number of cycles
+     => decay_factor = 0.5 ** (1 / Number of cycles)
+
+    RawUsage if constantly using 1 unit of resource:
+        RawUsage == RawUsage * decay_factor + calc_period_sec
+     => RawUsage = calc_period_sec / (1 - decay_factor)
+    """
+
+    decay_conf = get_decay_conf()
     decay_factor = 0.5 ** (
         decay_conf['calc_period_sec'] / decay_conf['half_life_sec']
     )
 
-    # RawUsage if constantly using 1 unit of resource
-    # RawUsage = RawUsage * decay_factor + calc_period_sec =>
-    #     RawUsage = calc_period_sec / (1 - decay_factor)
     return decay_conf['calc_period_sec'] / (1.0 - decay_factor)
 
 
 def get_comma_sep_accounts(username: str) -> str:
+    """Get a comma separated list of accounts usable by a given username
+    """
+
     return subprocess.run(
         (
             'sacctmgr --noheader --parsable2 show user withassoc ' +
@@ -92,6 +113,13 @@ def get_comma_sep_accounts(username: str) -> str:
 
 
 def get_sshare_output(accounts: str) -> str:
+    """Get the detailed sshare output for the given accounts
+
+    accounts -- comma separated list of accounts
+
+    Returns: the output of sshare in JSON format (not parsed in Python, yet)
+    """
+
     return subprocess.run(
         f'sshare --json -A {accounts}'.split(' '),
         capture_output=True,
@@ -100,7 +128,25 @@ def get_sshare_output(accounts: str) -> str:
 
 
 def sshare2(sshare_dict, raw_usage_factor: float, header: bool=True) -> None:
+    """This is a modified and simplified sshare implementation
+
+    This function prints the following columns:
+    - Account: Slurm compute account
+    - RawShares: Slurm RawShares
+    - RawUsage: Slurm RawUsage
+    - AvgUsage: Slurm RawUsage divided by raw_usage_factor
+        This gives a result in the same scale and units as the RawShares
+    - *LevelFS: Corrected LevelFS = RawShares / AvgUsage.
+        If AvgUsage is 0, we get raw_usage_factor as the LevelFS
+    """
+
     def text_just(text: str, just_type: str, width: int) -> str:
+        """Justify the text by the type ('l' or 'r') and a given width
+
+        just_type -- Justification type, either 'l' (default) or 'r'
+        width -- Number of characters of the output (truncates longer strings)
+        """
+
         text = text[:width]
         return text.rjust(width) if just_type == 'r' else text.ljust(width)
 
