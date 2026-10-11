@@ -192,10 +192,10 @@ def sshare2(sshare_dict, raw_usage_factor: float, header: bool=True) -> None:
 
     if header:
         print()
-        print('* EN: Corrected LevelFS - 1.0 represents a usage equivalent to',
-              'the target. \n     ',
+        print('* EN: LevelFS by RawUsage - 1.0 represents a usage equivalent',
+              'to the target. \n     ',
               'https://docs.alliancecan.ca/wiki/Job_scheduling_policies')
-        print('* FR: LevelFS corrigé - 1.0 représente une utilisation',
+        print('* FR: LevelFS selon RawUsage - 1.0 est une utilisation',
               'équivalente à la cible.\n     ',
               'https://docs.alliancecan.ca/wiki/Job_scheduling_policies/fr')
 
