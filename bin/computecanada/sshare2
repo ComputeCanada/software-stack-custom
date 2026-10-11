@@ -95,13 +95,7 @@ def get_asymptotical_raw_usage() -> float:
         decay_conf['calc_period_sec'] / decay_conf['half_life_sec']
     )
 
-    # RawShares over billing factor for one unit of resource
-    if os.getenv('CC_CLUSTER') == 'trillium':
-        share_factor = 12200 if os.getenv('HOSTNAME')[:4] == 'trig' else 1000
-    else:
-        share_factor = 1
-
-    return decay_conf['calc_period_sec'] / (1.0 - decay_factor) / share_factor
+    return decay_conf['calc_period_sec'] / (1.0 - decay_factor)
 
 
 def get_comma_sep_accounts(username: str) -> str:
@@ -174,12 +168,19 @@ def sshare2(sshare_dict, raw_usage_factor: float, header: bool=True) -> None:
         ]
         print(*columns_underline)
 
+    # RawShares over billing factor for one unit of resource
+    if os.getenv('CC_CLUSTER') == 'trillium':
+        trillium_gpu = os.getenv('HOSTNAME')[:4] == 'trig'
+        share_billing_factor = 12200 if trillium_gpu else 1000
+    else:
+        share_billing_factor = 1
+
     for share_info in sshare_dict['shares']['shares']:
         if share_info['parent'] == 'root':
             account = share_info['name']
             raw_shares = share_info['shares']['number']
             raw_usage = share_info['usage']
-            avg_usage = raw_usage / raw_usage_factor
+            avg_usage = raw_usage * share_billing_factor / raw_usage_factor
             level_fs = raw_shares / (avg_usage + 1. / raw_usage_factor)
 
             print(
