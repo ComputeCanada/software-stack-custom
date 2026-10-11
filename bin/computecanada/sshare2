@@ -95,7 +95,13 @@ def get_asymptotical_raw_usage() -> float:
         decay_conf['calc_period_sec'] / decay_conf['half_life_sec']
     )
 
-    return decay_conf['calc_period_sec'] / (1.0 - decay_factor)
+    # RawShares over billing factor for one unit of resource
+    if os.getenv('CC_CLUSTER') == 'trillium':
+        share_factor = 12200 if os.getenv('HOSTNAME')[:4] == 'trig' else 1000
+    else:
+        share_factor = 1
+
+    return decay_conf['calc_period_sec'] / (1.0 - decay_factor) / share_factor
 
 
 def get_comma_sep_accounts(username: str) -> str:
