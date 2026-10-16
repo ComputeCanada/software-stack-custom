@@ -153,8 +153,8 @@ def sshare2(sshare_dict, raw_usage_factor: float, header: bool = True) -> None:
     col_just = {
         'Account': ('l', 20),
         'RawShares': ('r', 10),
-        'RawUsage': ('r', 18),
-        'AvgUsage': ('r', 10),
+        'RecentUsage': ('r', 12),
+        'PercentUse': ('r', 12),
         'Scaled_LevelFS': ('r', 16),
     }
 
@@ -181,13 +181,17 @@ def sshare2(sshare_dict, raw_usage_factor: float, header: bool = True) -> None:
             raw_shares = share_info['shares']['number']
             raw_usage = share_info['usage']
             avg_usage = raw_usage * share_billing_factor / raw_usage_factor
+            percent_use = avg_usage / max(raw_shares, 1) * 100.
             level_fs = raw_shares / (avg_usage + 1. / raw_usage_factor)
 
             print(
                 text_just(account, *col_just['Account']),
                 text_just(str(raw_shares), *col_just['RawShares']),
-                text_just(str(raw_usage), *col_just['RawUsage']),
-                text_just(f'{avg_usage:.0f}', *col_just['AvgUsage']),
+                text_just(f'{avg_usage:.0f}', *col_just['RecentUsage']),
+                text_just(
+                    f'{percent_use:.2f}%' if raw_shares > 1 else 'NA',
+                    *col_just['PercentUse']
+                ),
                 text_just(f'{level_fs:.6f}', *col_just['Scaled_LevelFS']),
             )
 
