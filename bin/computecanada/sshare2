@@ -6,6 +6,21 @@ import re
 import subprocess
 
 
+slurm_conf_path_to_cluster_names = {
+    '/etc/slurm/slurm.conf': [
+        'fir', 'narval', 'nibi', 'rorqual', 'tamia', 'vulcan'],
+    '/opt/slurm/etc/slurm.conf': [
+        'trillium'],
+}
+
+# RawShares over billing factor for one unit of resource
+share_billing_factor = {
+    'trillium': (  # milli-RGUs/GPU if Trillium-GPU else milli-cores/core
+        12200 if os.getenv('HOSTNAME')[:4] == 'trig' else 1000
+    ),
+}.get(os.getenv('CC_CLUSTER'), 1)
+
+
 def time_to_seconds(time_spec: str) -> int:
     """Convert Slurm time periods to a number of seconds
 
@@ -47,17 +62,11 @@ def get_decay_conf() -> dict[str, int]:
         'calc_period_sec': 5 * 60,          # 5 minutes
     }
 
-    slurm_conf_path_to_cluster_names = {
-        '/etc/slurm/slurm.conf': [
-            'fir', 'narval', 'nibi', 'rorqual', 'tamia', 'vulcan'],
-        '/opt/slurm/etc/slurm.conf': ['trillium'],
-    }
     slurm_conf_paths = {
         cluster_name: sc_path
         for sc_path, cluster_names in slurm_conf_path_to_cluster_names.items()
         for cluster_name in cluster_names
     }
-
     cluster_name = os.getenv('CC_CLUSTER')
 
     if cluster_name not in slurm_conf_paths:
@@ -167,13 +176,6 @@ def sshare2(sshare_dict, raw_usage_factor: float, header: bool = True) -> None:
             '-' * col_conf[1] for name, col_conf in col_just.items()
         ]
         print(*columns_underline)
-
-    # RawShares over billing factor for one unit of resource
-    if os.getenv('CC_CLUSTER') == 'trillium':
-        trillium_gpu = os.getenv('HOSTNAME')[:4] == 'trig'
-        share_billing_factor = 12200 if trillium_gpu else 1000
-    else:
-        share_billing_factor = 1
 
     for share_info in sshare_dict['shares']['shares']:
         if share_info['parent'] == 'root':
