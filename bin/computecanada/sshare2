@@ -16,6 +16,7 @@ slurm_conf_path_to_cluster_names = {
 
 # RawShares over billing factor for one unit of resource
 share_billing_factor = {
+    'tamia': 12200 / 36696.,
     'trillium': (  # milli-RGUs/GPU if Trillium-GPU else milli-cores/core
         12200 if socket.gethostname()[:4] == 'trig' else 1000
     ),
