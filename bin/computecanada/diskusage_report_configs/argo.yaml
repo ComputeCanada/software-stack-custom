@@ -4,8 +4,8 @@ filesystems:
   /scratch:
     quota_type: user
   /project:
-    quota_type: group
+    quota_type: project
     extra_quotas:
       - quota_type: group
         quota_id: user
-gpfs_diskusage_location: /opt/software/diskusage/argo
+gpfs_device_name: DSS.dss01-data:/dev/acenet

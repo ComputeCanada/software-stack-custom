@@ -28,7 +28,7 @@ DEFAULT_CONFIG = {
         ('links/projects', '*'),
         ('links/nearlines', '*'),
     ],
-    'gpfs_diskusage_location': None,
+    'gpfs_device_name': '{}',
     'warning_threshold': 0.95,
 }
 cfg = DEFAULT_CONFIG
@@ -135,6 +135,14 @@ def get_paths_info(paths, filesystems):
         else:
             path_info['quota_type'] = cfg['filesystems'][path_info['filesystem']]['quota_type']
 
+        # Unfortunately normal users can't invoke mmlsfileset, so we
+        # have to rely on the assumption that the project name is the
+        # group name, if it is otherwise unset.
+        if path_info['fs_type'] == 'gpfs' and \
+           path_info['project'] is None and \
+           path_info['quota_type'] == 'project':
+            path_info['project'] = path_info['group']
+
         paths_info[str(path.resolve())] = path_info
     return paths_info
 
@@ -156,16 +164,24 @@ def get_quota(path_info, quota_type, quota_identity=None):
             command = f"df --inodes {path_info['path']} | grep {filesystem} | awk '{{print $3,$2}}'"
             data += get_command_output(command).split(' ')
     elif fs_type == 'gpfs':
+        fs_name = os.path.basename(filesystem)
+        device = cfg['gpfs_device_name'].format(fs_name)
+        tokens, qtype = [], None
+        if quota_type == 'project':
+            command = f"/usr/lpp/mmfs/bin/mmlsquota -j {identity} {device} | grep -m 1 {fs_name}"
+            tokens = get_command_output(command).split()
+            qtype = 'FILESET'
+        # The conditionals above and below are independent as we want
+        # to query by group as a fallback if querying by fileset
+        # fails.  In that case, tokens will be [] here.
         if quota_type == 'user':
-            qt = 'u'
+            command = f"/usr/lpp/mmfs/bin/mmlsquota -u {identity} {device} | grep -m 1 {fs_name}"
+            tokens = get_command_output(command).split()
             qtype = 'USR'
-        elif quota_type == 'group':
-            qt = 'g'
+        elif quota_type == 'group' or tokens == []:
+            command = f"/usr/lpp/mmfs/bin/mmlsquota -g {identity} {device} | grep -m 1 {fs_name}"
+            tokens = get_command_output(command).split()
             qtype = 'GRP'
-        fn = os.path.join(cfg['gpfs_diskusage_location'], qt, filesystem.removeprefix('/'), identity)
-        with open(fn, 'r') as quota_file:
-            line = quota_file.readlines()[-1]
-            tokens = line.split()
         # GPFS quota file format is:
         # YYYY-mm-dd_HH:MM  Name           type  KB  quota  limit  in_doubt  grace  |  files  quota  limit  in_doubt  grace
         # or
