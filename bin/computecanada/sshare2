@@ -1,4 +1,4 @@
-#!/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr/bin/python
+#!/bin/env python3
 import argparse
 import json
 import os
