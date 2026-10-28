@@ -146,11 +146,11 @@ def sshare2(sshare_dict, raw_usage_factor: float, header: bool = True) -> None:
     This function prints the following columns:
     - Account: Slurm compute account
     - RawShares: Slurm RawShares
-    - RawUsage: Slurm RawUsage
-    - AvgUsage: Slurm RawUsage divided by raw_usage_factor
+    - RecentUsage: Slurm RawUsage mainly downscaled by raw_usage_factor
         This gives a result in the same scale and units as the RawShares
-    - *LevelFS: Corrected LevelFS = RawShares / AvgUsage.
-        If AvgUsage is 0, we get raw_usage_factor as the LevelFS
+    - PercentUse: RecentUsage over RawShares, in percentage
+    - Scaled_LevelFS: Corrected LevelFS = RawShares / RecentUsage
+        If RecentUsage is 0, we get RawShares * raw_usage_factor
     """
 
     def text_just(text: str, just_type: str, width: int) -> str:
@@ -186,14 +186,14 @@ def sshare2(sshare_dict, raw_usage_factor: float, header: bool = True) -> None:
             account = share_info['name']
             raw_shares = share_info['shares']['number']
             raw_usage = share_info['usage']
-            avg_usage = raw_usage * share_billing_factor / raw_usage_factor
-            percent_use = avg_usage / max(raw_shares, 1) * 100.
-            level_fs = raw_shares / (avg_usage + 1. / raw_usage_factor)
+            recent_usage = raw_usage * share_billing_factor / raw_usage_factor
+            percent_use = recent_usage / max(raw_shares, 1) * 100.
+            level_fs = raw_shares / (recent_usage + 1. / raw_usage_factor)
 
             print(
                 text_just(account, *col_just['Account']),
                 text_just(str(raw_shares), *col_just['RawShares']),
-                text_just(f'{avg_usage:.0f}', *col_just['RecentUsage']),
+                text_just(f'{recent_usage:.0f}', *col_just['RecentUsage']),
                 text_just(
                     f'{percent_use:.2f}%' if raw_shares > 1 else 'NA',
                     *col_just['PercentUse']
