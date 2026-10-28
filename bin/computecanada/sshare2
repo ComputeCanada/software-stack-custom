@@ -121,12 +121,12 @@ def get_comma_sep_accounts(username: str) -> str:
         capture_output=True,
         check=True,
         text=True,
-    ).stdout.strip().replace('\n', ',')
+    ).stdout.strip()
 
     if not accounts:
         raise ValueError(f'"{username}" is unknown to the Slurm scheduler')
 
-    return accounts
+    return ','.join(sorted(set(accounts.split('\n'))))
 
 
 def get_sshare_output(accounts: str) -> str:
