@@ -1,5 +1,6 @@
 #!/bin/env python3
 import argparse
+import getpass
 import json
 import os
 import re
@@ -108,10 +109,10 @@ def get_comma_sep_accounts(username: str) -> str:
     """Get a comma separated list of accounts usable by a given username
     """
 
-    if not re.fullmatch('[a-z][0-9a-z]*', username):
+    if not re.fullmatch('[a-z][0-9a-z_-]*', username):
         raise ValueError(f'"{username}" is not a valid username')
 
-    return subprocess.run(
+    accounts = subprocess.run(
         (
             'sacctmgr --noheader --parsable2 show user withassoc ' +
             f'where user={username} format=Account'
@@ -119,6 +120,11 @@ def get_comma_sep_accounts(username: str) -> str:
         capture_output=True,
         text=True,
     ).stdout.strip().replace('\n', ',')
+
+    if not accounts:
+        raise ValueError(f'"{username}" is unknown to the Slurm scheduler')
+
+    return accounts
 
 
 def get_sshare_output(accounts: str) -> str:
@@ -219,7 +225,7 @@ if __name__ == '__main__':
         help='show for these specified accounts only (comma separated list)'
     )
     parser.add_argument(
-        '-u', '--user', default=os.getenv('USER'),
+        '-u', '--user', default=getpass.getuser(),
         help="show all the accounts usable by this specified user"
     )
     parser.add_argument(
