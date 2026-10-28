@@ -108,8 +108,8 @@ def get_comma_sep_accounts(username: str) -> str:
     """Get a comma separated list of accounts usable by a given username
     """
 
-    assert re.fullmatch('[a-z][0-9a-z]*', username), \
-        f'"{username}" is not a valid username'
+    if not re.fullmatch('[a-z][0-9a-z]*', username):
+        raise ValueError(f'"{username}" is not a valid username')
 
     return subprocess.run(
         (
@@ -130,8 +130,9 @@ def get_sshare_output(accounts: str) -> str:
     """
 
     for acctname in accounts.split(','):
-        assert re.fullmatch('[a-z]{1,3}[-0-9a-z]+(_[a-z]{3})?', acctname), \
-            f'"{acctname}" is not a valid compute account name'
+        if not re.fullmatch('[a-z]{1,3}[-0-9a-z]+(_[a-z]{3})?', acctname):
+            raise ValueError(
+                f'"{acctname}" is not a valid compute account name')
 
     return subprocess.run(
         f'sshare --json -A {accounts}'.split(' '),
