@@ -182,8 +182,8 @@ def sshare2(sshare_dict, raw_usage_factor: float, header: bool = True) -> None:
         print(*columns_underline)
 
     for share_info in sshare_dict['shares']['shares']:
-        if share_info['parent'] == 'root':
-            account = share_info['name']
+        if share_info['parent'].strip() == 'root':
+            account = share_info['name'].strip()
             raw_shares = share_info['shares']['number']
             raw_usage = share_info['usage']
             recent_usage = raw_usage * share_billing_factor / raw_usage_factor
