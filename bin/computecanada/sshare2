@@ -65,9 +65,12 @@ def get_decay_conf() -> dict[str, int]:
         text=True,
     ).stdout
     slurm_decay_config = dict(
-        (param_or_value.strip() for param_or_value in conf_line.split(' = '))
-        for conf_line in slurm_config_raw.split('\n')
-        if re.search('(PriorityDecayHalfLife|PriorityCalcPeriod)', conf_line)
+        (
+            param_or_value.strip()
+            for param_or_value in line.split(' = ', maxsplit=1)
+        )
+        for line in slurm_config_raw.split('\n')
+        if re.match('^(PriorityDecayHalfLife|PriorityCalcPeriod) += ', line)
     )
 
     half_life = time_to_seconds(
