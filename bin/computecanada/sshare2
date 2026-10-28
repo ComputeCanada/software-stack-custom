@@ -61,6 +61,7 @@ def get_decay_conf() -> dict[str, int]:
     slurm_config_raw = subprocess.run(
         'scontrol show config'.split(' '),
         capture_output=True,
+        check=True,
         text=True,
     ).stdout
     slurm_decay_config = dict(
@@ -118,6 +119,7 @@ def get_comma_sep_accounts(username: str) -> str:
             f'where user={username} format=Account'
         ).split(' '),
         capture_output=True,
+        check=True,
         text=True,
     ).stdout.strip().replace('\n', ',')
 
@@ -143,6 +145,7 @@ def get_sshare_output(accounts: str) -> str:
     return subprocess.run(
         f'sshare --json -A {accounts}'.split(' '),
         capture_output=True,
+        check=True,
         text=True,
     ).stdout
 
