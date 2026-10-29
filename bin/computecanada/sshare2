@@ -59,7 +59,7 @@ def get_decay_conf() -> dict[str, int]:
     }
 
     slurm_config_raw = subprocess.run(
-        'scontrol show config'.split(' '),
+        'scontrol show config'.split(),
         capture_output=True,
         check=True,
         text=True,
@@ -69,7 +69,7 @@ def get_decay_conf() -> dict[str, int]:
             param_or_value.strip()
             for param_or_value in line.split(' = ', maxsplit=1)
         )
-        for line in slurm_config_raw.split('\n')
+        for line in slurm_config_raw.splitlines()
         if re.match('^(PriorityDecayHalfLife|PriorityCalcPeriod) += ', line)
     )
 
@@ -117,10 +117,8 @@ def get_comma_sep_accounts(username: str) -> str:
         raise ValueError(f'"{username}" is not a valid username')
 
     accounts = subprocess.run(
-        (
-            'sacctmgr --noheader --parsable2 show user withassoc ' +
-            f'where user={username} format=Account'
-        ).split(' '),
+        'sacctmgr --noheader --parsable2 show user withassoc'.split()
+            + f'where user={username} format=Account'.split(),
         capture_output=True,
         check=True,
         text=True,
@@ -129,7 +127,7 @@ def get_comma_sep_accounts(username: str) -> str:
     if not accounts:
         raise ValueError(f'"{username}" is unknown to the Slurm scheduler')
 
-    return ','.join(sorted(set(accounts.split('\n'))))
+    return ','.join(sorted(set(accounts.splitlines())))
 
 
 def get_sshare_output(accounts: str) -> str:
@@ -146,7 +144,7 @@ def get_sshare_output(accounts: str) -> str:
                 f'"{acctname}" is not a valid compute account name')
 
     return subprocess.run(
-        f'sshare --json -A {accounts}'.split(' '),
+        f'sshare --json -A {accounts}'.split(),
         capture_output=True,
         check=True,
         text=True,
