@@ -1,4 +1,4 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 import argparse
 import getpass
 import json
@@ -6,6 +6,7 @@ import os
 import re
 import socket
 import subprocess
+from typing import Any
 
 
 # RawShares over billing factor for one unit of resource
@@ -118,7 +119,7 @@ def get_comma_sep_accounts(username: str) -> str:
 
     accounts = subprocess.run(
         'sacctmgr --noheader --parsable2 show user withassoc'.split()
-            + f'where user={username} format=Account'.split(),
+        + f'where user={username} format=Account'.split(),
         capture_output=True,
         check=True,
         text=True,
@@ -151,7 +152,11 @@ def get_sshare_output(accounts: str) -> str:
     ).stdout
 
 
-def sshare2(sshare_dict, raw_usage_factor: float, header: bool = True) -> None:
+def sshare2(
+    sshare_dict: dict[str, Any],
+    raw_usage_factor: float,
+    show_header: bool = True
+) -> None:
     """This is a modified and simplified sshare implementation
 
     This function prints the following columns:
@@ -182,7 +187,7 @@ def sshare2(sshare_dict, raw_usage_factor: float, header: bool = True) -> None:
         'Scaled_LevelFS': ('r', 16),
     }
 
-    if header:
+    if show_header:
         columns_str = [
             text_just(name, *col_conf) for name, col_conf in col_just.items()
         ]
@@ -212,7 +217,7 @@ def sshare2(sshare_dict, raw_usage_factor: float, header: bool = True) -> None:
                 text_just(f'{level_fs:.6f}', *col_just['Scaled_LevelFS']),
             )
 
-    if header:
+    if show_header:
         print('\n= Scaled LevelFS =')
         print('- EN: A value of 1.0 represents a usage equivalent to the',
               'target.\n     ',
