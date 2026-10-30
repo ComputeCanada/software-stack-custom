@@ -169,53 +169,42 @@ def sshare2(
         If RecentUsage is 0, we get RawShares * raw_usage_factor
     """
 
-    def text_just(text: str, just_type: str, width: int) -> str:
-        """Justify the text by the type ('l' or 'r') and a given width
-
-        just_type -- Justification type, either 'l' (default) or 'r'
-        width -- Number of characters of the output (truncates longer strings)
-        """
-
-        text = text[:width]
-        return text.rjust(width) if just_type == 'r' else text.ljust(width)
-
     col_just = {
-        'Account': ('l', 20),
-        'RawShares': ('r', 10),
-        'RecentUsage': ('r', 12),
-        'PercentUse': ('r', 12),
-        'Scaled_LevelFS': ('r', 16),
+        'Account': ('<', 20),
+        'RawShares': ('>', 10),
+        'RecentUsage': ('>', 12),
+        'PercentUse': ('>', 12),
+        'Scaled_LevelFS': ('>', 16),
     }
 
     if show_header:
-        columns_str = [
-            text_just(name, *col_conf) for name, col_conf in col_just.items()
-        ]
-        print(*columns_str)
-        columns_underline = [
-            '-' * col_conf[1] for name, col_conf in col_just.items()
-        ]
-        print(*columns_underline)
+        print(*[
+            f'{name:{just}{width}}' for name, (just, width) in col_just.items()
+        ])
+        print(*[
+            '-' * width for name, (just, width) in col_just.items()
+        ])
 
     for share_info in sshare_dict['shares']['shares']:
         if share_info['parent'].strip() == 'root':
-            account = share_info['name'].strip()
             raw_shares = share_info['shares']['number']
             raw_usage = share_info['usage']
             recent_usage = raw_usage * share_billing_factor / raw_usage_factor
             percent_use = recent_usage / max(raw_shares, 1) * 100.
             level_fs = raw_shares / (recent_usage + 1. / raw_usage_factor)
 
-            print(
-                text_just(account, *col_just['Account']),
-                text_just(str(raw_shares), *col_just['RawShares']),
-                text_just(f'{recent_usage:.0f}', *col_just['RecentUsage']),
-                text_just(
+            row = {
+                'Account': share_info['name'].strip(),
+                'RawShares': str(raw_shares),
+                'RecentUsage': f'{recent_usage:.0f}',
+                'PercentUse':
                     f'{percent_use:.2f}%' if raw_shares > 1 else 'NA',
-                    *col_just['PercentUse']
-                ),
-                text_just(f'{level_fs:.6f}', *col_just['Scaled_LevelFS']),
-            )
+                'Scaled_LevelFS': f'{level_fs:.6f}',
+            }
+            print(*[
+                f'{row[name]:{just}{width}.{width}}'
+                for name, (just, width) in col_just.items()
+            ])
 
     if show_header:
         print('\n= Scaled LevelFS =')
