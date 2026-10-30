@@ -28,18 +28,16 @@ def time_to_seconds(time_spec: str) -> int:
 
     days, hours, minutes, seconds = 0, 0, 0, 0
 
-    if re.search('-', time_spec):
-        days, hh_mm_ss = tuple(time_spec.split('-'))
-        days = int(days)
+    if '-' in time_spec:
+        days_str, hh_mm_ss = time_spec.split('-')[:2]
+        days = int(days_str)
     else:
         hh_mm_ss = time_spec
 
     if hh_mm_ss:
-        hh_mm_ss = hh_mm_ss.split(':')
-        while len(hh_mm_ss) < 3:
-            hh_mm_ss.append('0')
-
-        hours, minutes, seconds = tuple([int(cc) for cc in hh_mm_ss])
+        parts_hms = hh_mm_ss.split(':')[:3]
+        parts_hms += ['0'] * (3 - len(parts_hms))
+        hours, minutes, seconds = (int(cc) for cc in parts_hms)
 
     return ((days * 24 + hours) * 60 + minutes) * 60 + seconds
 
