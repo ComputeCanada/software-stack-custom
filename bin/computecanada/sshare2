@@ -1,0 +1,237 @@
+#!/usr/bin/env python3
+import argparse
+import getpass
+import json
+import os
+import re
+import socket
+import subprocess
+from typing import Any
+
+
+# RawShares over billing factor for one unit of resource
+share_billing_factor = {
+    'tamia': 12200 / 36696.,
+    'trillium': (  # milli-RGUs/GPU if Trillium-GPU else milli-cores/core
+        12200 if socket.gethostname()[:4] == 'trig' else 1000
+    ),
+}.get(os.getenv('CC_CLUSTER'), 1)
+
+
+def time_to_seconds(time_spec: str) -> int:
+    """Convert Slurm time periods to a number of seconds
+
+    time_spec -- time period of this format: [d-]hh[:mm[:ss]]
+
+    Returns: a number of seconds
+    """
+
+    days, hours, minutes, seconds = 0, 0, 0, 0
+
+    if '-' in time_spec:
+        days_str, hh_mm_ss = time_spec.split('-')[:2]
+        days = int(days_str)
+    else:
+        hh_mm_ss = time_spec
+
+    if hh_mm_ss:
+        parts_hms = hh_mm_ss.split(':')[:3]
+        parts_hms += ['0'] * (3 - len(parts_hms))
+        hours, minutes, seconds = (int(cc) for cc in parts_hms)
+
+    return ((days * 24 + hours) * 60 + minutes) * 60 + seconds
+
+
+def get_decay_conf() -> dict[str, int]:
+    """Convert Slurm PriorityDecayHalfLife and PriorityCalcPeriod to seconds
+
+    The default durations are documented here:
+    - https://slurm.schedmd.com/slurm.conf.html#OPT_PriorityDecayHalfLife
+    - https://slurm.schedmd.com/slurm.conf.html#OPT_PriorityCalcPeriod
+
+    Returns: dictionary with keys: 'half_life_sec' and 'calc_period_sec'
+    """
+
+    decay_conf = {
+        'half_life_sec': 7 * 24 * 60 * 60,  # 7 days
+        'calc_period_sec': 5 * 60,          # 5 minutes
+    }
+
+    slurm_config_raw = subprocess.run(
+        'scontrol show config'.split(),
+        capture_output=True,
+        check=True,
+        text=True,
+    ).stdout
+    slurm_decay_config = dict(
+        (
+            param_or_value.strip()
+            for param_or_value in line.split(' = ', maxsplit=1)
+        )
+        for line in slurm_config_raw.splitlines()
+        if re.match('^(PriorityDecayHalfLife|PriorityCalcPeriod) += ', line)
+    )
+
+    half_life = time_to_seconds(
+        slurm_decay_config.get('PriorityDecayHalfLife', '0')
+    )
+    if half_life > 0:
+        decay_conf['half_life_sec'] = half_life
+
+    calc_period = time_to_seconds(
+        slurm_decay_config.get('PriorityCalcPeriod', '0')
+    )
+    if calc_period > 0:
+        decay_conf['calc_period_sec'] = calc_period
+
+    return decay_conf
+
+
+def get_asymptotical_raw_usage() -> float:
+    """Get the RawUsage if 1 share is used constantly since forever
+
+    This function automatically gets the local Slurm decay configuration. Then:
+        Number of cycles = half_life_sec / calc_period_sec
+        0.5 == decay_factor ** Number of cycles
+     => decay_factor = 0.5 ** (1 / Number of cycles)
+
+    RawUsage if constantly using 1 unit of resource:
+        RawUsage == RawUsage * decay_factor + calc_period_sec
+     => RawUsage = calc_period_sec / (1 - decay_factor)
+    """
+
+    decay_conf = get_decay_conf()
+    decay_factor = 0.5 ** (
+        decay_conf['calc_period_sec'] / decay_conf['half_life_sec']
+    )
+
+    return decay_conf['calc_period_sec'] / (1.0 - decay_factor)
+
+
+def get_comma_sep_accounts(username: str) -> str:
+    """Get a comma separated list of accounts usable by a given username
+    """
+
+    if not re.fullmatch('[a-z][0-9a-z_-]*', username):
+        raise ValueError(f'"{username}" is not a valid username')
+
+    accounts = subprocess.run(
+        'sacctmgr --noheader --parsable2 show user withassoc'.split()
+        + f'where user={username} format=Account'.split(),
+        capture_output=True,
+        check=True,
+        text=True,
+    ).stdout.strip()
+
+    if not accounts:
+        raise ValueError(f'"{username}" is unknown to the Slurm scheduler')
+
+    return ','.join(sorted(set(accounts.splitlines())))
+
+
+def get_sshare_output(accounts: str) -> str:
+    """Get the detailed sshare output for the given accounts
+
+    accounts -- comma separated list of accounts
+
+    Returns: the output of sshare in JSON format (not parsed in Python, yet)
+    """
+
+    for acctname in accounts.split(','):
+        if not re.fullmatch('[a-z]{1,3}[-0-9a-z]+(_[a-z]{3})?', acctname):
+            raise ValueError(
+                f'"{acctname}" is not a valid compute account name')
+
+    return subprocess.run(
+        f'sshare --json -A {accounts}'.split(),
+        capture_output=True,
+        check=True,
+        text=True,
+    ).stdout
+
+
+def sshare2(
+    sshare_dict: dict[str, Any],
+    raw_usage_factor: float,
+    show_header: bool = True
+) -> None:
+    """This is a modified and simplified sshare implementation
+
+    This function prints the following columns:
+    - Account: Slurm compute account
+    - RawShares: Slurm RawShares
+    - RecentUsage: Slurm RawUsage mainly downscaled by raw_usage_factor
+        This gives a result in the same scale and units as the RawShares
+    - PercentUse: RecentUsage over RawShares, in percentage
+    - Scaled_LevelFS: Corrected LevelFS = RawShares / RecentUsage
+        If RecentUsage is 0, we get RawShares * raw_usage_factor
+    """
+
+    col_just = {
+        'Account': ('<', 20),
+        'RawShares': ('>', 10),
+        'RecentUsage': ('>', 12),
+        'PercentUse': ('>', 12),
+        'Scaled_LevelFS': ('>', 16),
+    }
+
+    if show_header:
+        print(*[
+            f'{name:{just}{width}}' for name, (just, width) in col_just.items()
+        ])
+        print(*[
+            '-' * width for name, (just, width) in col_just.items()
+        ])
+
+    for share_info in sshare_dict['shares']['shares']:
+        if share_info['parent'].strip() == 'root':
+            raw_shares = share_info['shares']['number']
+            raw_usage = share_info['usage']
+            recent_usage = raw_usage * share_billing_factor / raw_usage_factor
+            percent_use = recent_usage / max(raw_shares, 1) * 100.
+            level_fs = raw_shares / (recent_usage + 1. / raw_usage_factor)
+
+            row = {
+                'Account': share_info['name'].strip(),
+                'RawShares': str(raw_shares),
+                'RecentUsage': f'{recent_usage:.0f}',
+                'PercentUse':
+                    f'{percent_use:.2f}%' if raw_shares > 1 else 'NA',
+                'Scaled_LevelFS': f'{level_fs:.6f}',
+            }
+            print(*[
+                f'{row[name]:{just}{width}.{width}}'
+                for name, (just, width) in col_just.items()
+            ])
+
+    if show_header:
+        print('\n= Scaled LevelFS =')
+        print('- EN: A value of 1.0 represents a usage equivalent to the',
+              'target.\n     ',
+              'https://docs.alliancecan.ca/wiki/Job_scheduling_policies')
+        print('- FR: Une valeur de 1.0 représente une utilisation équivalente',
+              'à la cible.\n     ',
+              'https://docs.alliancecan.ca/wiki/Job_scheduling_policies/fr')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-A', '--accounts',
+        help='show for these specified accounts only (comma separated list)'
+    )
+    parser.add_argument(
+        '-u', '--user', default=getpass.getuser(),
+        help="show all the accounts usable by this specified user"
+    )
+    parser.add_argument(
+        '-n', '--noheader', action='store_true',
+        help="no header and no foot note"
+    )
+    args = parser.parse_args()
+
+    sshare_dict = json.loads(get_sshare_output(
+        args.accounts if args.accounts else get_comma_sep_accounts(args.user)
+    ))
+
+    sshare2(sshare_dict, get_asymptotical_raw_usage(), not args.noheader)
