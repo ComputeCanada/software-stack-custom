@@ -186,10 +186,10 @@ def sshare2(
     for share_info in sshare_dict['shares']['shares']:
         if share_info['parent'].strip() == 'root':
             raw_shares = share_info['shares']['number']
-            raw_usage = share_info['usage']
+            raw_usage = max(share_info['usage'], 1)
             recent_usage = raw_usage * share_billing_factor / raw_usage_factor
             percent_use = recent_usage / max(raw_shares, 1) * 100.
-            level_fs = raw_shares / (recent_usage + 1. / raw_usage_factor)
+            level_fs = raw_shares / recent_usage
 
             row = {
                 'Account': share_info['name'].strip(),
