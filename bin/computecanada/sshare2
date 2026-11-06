@@ -181,12 +181,12 @@ def sshare2(
     }
 
     if show_header:
-        print(*[
+        print(*(
             f'{name:{just}{width}}' for name, (just, width) in col_just.items()
-        ])
-        print(*[
+        ))
+        print(*(
             '-' * width for name, (just, width) in col_just.items()
-        ])
+        ))
 
     for share_info in sshare_dict['shares']['shares']:
         if share_info['parent'].strip() == 'root':
@@ -204,10 +204,10 @@ def sshare2(
                     f'{percent_use:.2f}%' if raw_shares > 1 else 'NA',
                 'Scaled_LevelFS': f'{level_fs:.6f}',
             }
-            print(*[
+            print(*(
                 f'{row[name]:{just}{width}.{width}}'
                 for name, (just, width) in col_just.items()
-            ])
+            ))
 
     if show_header:
         print('\n= Scaled LevelFS =')
