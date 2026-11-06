@@ -124,7 +124,8 @@ def get_comma_sep_accounts(username: str) -> str:
     ).stdout.strip()
 
     if not accounts:
-        raise ValueError(f'"{username}" is unknown to the Slurm scheduler')
+        raise ValueError(
+            f'the username "{username}" is unknown to the Slurm scheduler')
 
     return ','.join(sorted(set(accounts.splitlines())))
 
@@ -230,8 +231,14 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    sshare_dict = json.loads(get_sshare_output(
-        args.accounts if args.accounts else get_comma_sep_accounts(args.user)
-    ))
+    try:
+        sshare_dict = json.loads(get_sshare_output(
+            args.accounts if args.accounts else get_comma_sep_accounts(
+                args.user)
+        ))
 
-    sshare2(sshare_dict, get_asymptotical_raw_usage(), not args.noheader)
+        sshare2(sshare_dict, get_asymptotical_raw_usage(), not args.noheader)
+    except ValueError as err:
+        print(f'Error: {err}')
+    except subprocess.CalledProcessError as err:
+        print(err.stderr.strip() or str(err))
