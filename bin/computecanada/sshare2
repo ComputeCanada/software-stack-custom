@@ -26,16 +26,20 @@ def time_to_seconds(time_spec: str) -> int:
     Returns: a number of seconds
     """
 
+    if not re.fullmatch('(\d+-)?\d{1,2}(:\d{1,2}){,2}', time_spec):
+        raise ValueError(
+            f'"{time_spec}" is not of the format [d-]hh[:mm[:ss]]')
+
     days, hours, minutes, seconds = 0, 0, 0, 0
 
     if '-' in time_spec:
-        days_str, hh_mm_ss = time_spec.split('-')[:2]
+        days_str, hh_mm_ss = time_spec.split('-')
         days = int(days_str)
     else:
         hh_mm_ss = time_spec
 
     if hh_mm_ss:
-        parts_hms = hh_mm_ss.split(':')[:3]
+        parts_hms = hh_mm_ss.split(':')
         parts_hms += ['0'] * (3 - len(parts_hms))
         hours, minutes, seconds = (int(cc) for cc in parts_hms)
 
