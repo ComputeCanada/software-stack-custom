@@ -243,6 +243,6 @@ if __name__ == '__main__':
 
         sshare2(sshare_dict, get_asymptotical_raw_usage(), not args.noheader)
     except ValueError as err:
-        print(f'Error: {err}')
+        raise SystemExit(f'Error: {err}') from None
     except subprocess.CalledProcessError as err:
-        print(err.stderr.strip() or str(err))
+        raise SystemExit(err.stderr.strip() or str(err)) from None
